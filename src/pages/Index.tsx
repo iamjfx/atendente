@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import {
   MessageCircle, CalendarDays, Bot, Smartphone,
   ChevronRight, BarChart3, Users, Sparkles, ArrowRight, Clock,
+  Menu, X,
 } from "lucide-react";
 import PhoneMockup from "@/components/PhoneMockup";
 
@@ -103,6 +104,7 @@ const baseWidths = [
 export default function Index() {
   const [activeStep, setActiveStep] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const bubbleRefs = useRef<(HTMLDivElement | null)[]>([]);
   const slotRefs = useRef<(HTMLDivElement | null)[]>([]);
   const agendaRef = useRef<HTMLDivElement>(null);
@@ -157,7 +159,7 @@ export default function Index() {
       const finalY = y + floatY;
 
       bubble.style.transform = `translate(-50%,-50%) translate(${finalX}px,${finalY}px) rotate(${rot}deg) scale(${scale})`;
-      bubble.style.opacity = String(1 - Math.max(0, (p - 0.7) / 0.3));
+      bubble.style.opacity = String(1 - Math.max(0, Math.min(1, (rawProgress - 0.6) / 0.15)));
     });
 
     rafRef.current = requestAnimationFrame(updatePositions);
@@ -169,13 +171,26 @@ export default function Index() {
   }, [updatePositions]);
 
   const steps = [
-    { num: "01", title: "Cliente chega", desc: "Manda um WhatsApp perguntando horário. A IA responde na hora, mesmo enquanto você trabalha.", screen: 0 },
-    { num: "02", title: "IA faz a triagem", desc: "Extrai nome, endereço, descrição do problema. Pergunta o que falta. Nada de formulário.", screen: 1 },
-    { num: "03", title: "Sugere e agenda", desc: "Confere seus horários, propõe o melhor pro cliente e confirma. Tudo automático.", screen: 2 },
+    { num: "01", title: "Cliente chega 💬", desc: "Manda um WhatsApp perguntando horário. A IA responde na hora, mesmo enquanto você trabalha.", screen: 0 },
+    { num: "02", title: "IA faz a triagem 🤖", desc: "Extrai nome, endereço, descrição do problema. Pergunta o que falta. Nada de formulário.", screen: 1 },
+    { num: "03", title: "Sugere e agenda 📅", desc: "Confere seus horários, propõe o melhor pro cliente e confirma. Tudo automático.", screen: 2 },
   ];
 
   return (
-    <div className="bg-background overflow-x-hidden" style={{ fontFamily: "Sora, system-ui, sans-serif" }}>
+    <div className="bg-background overflow-x-hidden relative" style={{ fontFamily: "Sora, system-ui, sans-serif" }}>
+      {/* FIXED GLOBAL BACKGROUND */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/10 to-success/10" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,hsl(220,78%,48%,0.06),transparent_60%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,hsl(152,55%,42%,0.06),transparent_60%)]" />
+        <div className="orb orb-1 absolute w-[200px] h-[200px] md:w-[300px] md:h-[300px] rounded-full"
+             style={{top:"5%",left:"5%",background:"radial-gradient(circle at 40% 40%,hsl(220,78%,65%,0.35),hsl(220,78%,48%,0.08) 60%,transparent 70%)"}} />
+        <div className="orb orb-2 absolute w-[180px] h-[180px] md:w-[260px] md:h-[260px] rounded-full"
+             style={{bottom:"5%",right:"8%",background:"radial-gradient(circle at 60% 40%,hsl(152,55%,65%,0.3),hsl(152,55%,42%,0.08) 60%,transparent 70%)"}} />
+        <div className="orb orb-3 absolute w-[150px] h-[150px] md:w-[220px] md:h-[220px] rounded-full"
+             style={{top:"35%",right:"30%",background:"radial-gradient(circle at 50% 30%,hsl(215,60%,75%,0.25),hsl(215,50%,60%,0.06) 60%,transparent 70%)"}} />
+      </div>
+
       <style>{`
         @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
 
@@ -213,34 +228,34 @@ export default function Index() {
         }
         .wa {
           background: #fff;
-          border-radius: 8px;
-          padding: 8px 12px 6px;
-          box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+          border-radius: 7px;
+          padding: 6px 9px 7px 9px;
+          box-shadow: 0 1px 0.5px rgba(0,0,0,0.12);
           position: relative;
           width: max-content;
           max-width: var(--bw, 260px);
-          border: 1px solid rgba(0,0,0,0.04);
         }
         .wa::before {
           content: "";
           position: absolute;
           top: 0;
-          left: -6px;
+          left: -5px;
           width: 0;
           height: 0;
-          border-top: 6px solid #fff;
-          border-left: 0 solid transparent;
-          border-right: 7px solid transparent;
+          border: 5px solid transparent;
+          border-left: 0;
+          border-bottom: 0;
+          border-right: 5px solid #fff;
+          border-top: 5px solid #fff;
         }
         .wa-name {
-          font-size: 12px;
-          font-weight: 700;
-          color: hsl(220,78%,48%);
-          margin-bottom: 1px;
-          line-height: 1.3;
+          font-size: 12.8px;
+          font-weight: 600;
+          color: #128C7E;
+          letter-spacing: -0.01em;
         }
         .wa-text {
-          font-size: 13.5px;
+          font-size: 14.2px;
           color: #111;
           line-height: 1.4;
           word-break: break-word;
@@ -249,17 +264,17 @@ export default function Index() {
           display: flex;
           align-items: center;
           justify-content: flex-end;
-          gap: 3px;
-          margin-top: 2px;
+          gap: 2px;
+          margin-top: 3px;
         }
         .wa-time {
-          font-size: 10.5px;
+          font-size: 11px;
           color: #667781;
         }
         .wa-check {
-          color: #53bdeb;
-          width: 14px;
+          width: 15px;
           height: 10px;
+          color: #53bdeb;
         }
 
         .agenda-item {
@@ -290,23 +305,42 @@ export default function Index() {
         .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
 
-      {/* HERO */}
-      <section ref={heroRef} className="relative min-h-[85vh] md:min-h-screen overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/10 to-success/10" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,hsl(220,78%,48%,0.06),transparent_60%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,hsl(152,55%,42%,0.06),transparent_60%)]" />
-
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="orb orb-1 absolute w-[200px] h-[200px] md:w-[300px] md:h-[300px] rounded-full"
-               style={{top:"5%",left:"5%",background:"radial-gradient(circle at 40% 40%,hsl(220,78%,65%,0.35),hsl(220,78%,48%,0.08) 60%,transparent 70%)"}} />
-          <div className="orb orb-2 absolute w-[180px] h-[180px] md:w-[260px] md:h-[260px] rounded-full"
-               style={{bottom:"5%",right:"8%",background:"radial-gradient(circle at 60% 40%,hsl(152,55%,65%,0.3),hsl(152,55%,42%,0.08) 60%,transparent 70%)"}} />
-          <div className="orb orb-3 absolute w-[150px] h-[150px] md:w-[220px] md:h-[220px] rounded-full"
-               style={{top:"35%",right:"30%",background:"radial-gradient(circle at 50% 30%,hsl(215,60%,75%,0.25),hsl(215,50%,60%,0.06) 60%,transparent 70%)"}} />
+      {/* HEADER */}
+      <header className="fixed top-0 inset-x-0 z-[60] bg-background/80 backdrop-blur-xl border-b border-border/50">
+        <div className="mx-auto max-w-6xl px-4 h-11 flex items-center justify-between">
+          <a href="/" className="flex items-center gap-2">
+            <Logo />
+            <span className="font-semibold text-sm tracking-tight text-foreground/85">Atendente</span>
+          </a>
+          <nav className="hidden md:flex items-center gap-7 text-xs font-medium text-muted-foreground">
+            <a href="#como-funciona" className="hover:text-foreground/85 transition-colors">Como funciona</a>
+            <a href="#ferramentas" className="hover:text-foreground/85 transition-colors">Ferramentas</a>
+            <a href="#precos" className="hover:text-foreground/85 transition-colors">Preços</a>
+            <div className="flex items-center gap-2">
+              <a href="/auth"><Button size="sm" variant="outline" className="border-border/60 text-muted-foreground hover:text-foreground hover:bg-accent text-xs rounded-full px-4 h-8">Entrar</Button></a>
+              <a href="/auth"><Button size="sm" className="bg-foreground text-background hover:bg-foreground/90 text-xs rounded-full px-5 h-8">Criar conta</Button></a>
+            </div>
+          </nav>
+          <button className="md:hidden p-1" onClick={() => setMobileOpen(!mobileOpen)}>
+            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
+        {mobileOpen && (
+          <div className="md:hidden border-t border-border/50 px-4 py-4 space-y-3 bg-background">
+            <a href="#como-funciona" className="block text-sm" onClick={() => setMobileOpen(false)}>Como funciona</a>
+            <a href="#ferramentas" className="block text-sm" onClick={() => setMobileOpen(false)}>Ferramentas</a>
+            <a href="#precos" className="block text-sm" onClick={() => setMobileOpen(false)}>Preços</a>
+            <a href="/auth" onClick={() => setMobileOpen(false)}><Button size="sm" variant="outline" className="w-full border-border/60 text-muted-foreground">Entrar</Button></a>
+            <a href="/auth" onClick={() => setMobileOpen(false)}><Button size="sm" className="w-full bg-foreground text-background">Criar conta</Button></a>
+          </div>
+        )}
+      </header>
+
+      {/* HERO */}
+      <section ref={heroRef} className="relative pt-11 min-h-[85vh] md:min-h-screen overflow-hidden">
 
         <div className="absolute inset-x-0 bottom-8 flex flex-col items-center gap-2 text-muted-foreground/40">
-          <span className="text-xs font-medium tracking-widest uppercase">Role para ver</span>
+          <span className="text-xs font-medium tracking-widest uppercase">Role para ver 👇</span>
           <div className="w-5 h-8 rounded-full border-2 border-muted-foreground/30 flex justify-center pt-1.5">
             <div className="w-1 h-2 rounded-full bg-muted-foreground/40 animate-bounce" />
           </div>
@@ -322,7 +356,6 @@ export default function Index() {
               key={msg.id}
               ref={(el) => { bubbleRefs.current[i] = el; }}
               className="bubble-fixed"
-              style={{ opacity: 0 }}
             >
               <div               className="wa" style={{ '--bw': `${baseWidths[i]}px` } as React.CSSProperties}>
                 <div className="flex items-center gap-2 mb-0.5">
@@ -337,8 +370,9 @@ export default function Index() {
                 <div className="wa-text">{msg.text}</div>
                 <div className="wa-footer">
                   <span className="wa-time">{msg.time}</span>
-                  <svg className="wa-check" viewBox="0 0 16 11" fill="currentColor">
-                    <path d="M11.071.653a.457.457 0 0 0-.304-.102.493.493 0 0 0-.381.178l-6.19 7.636-2.011-2.095a.463.463 0 0 0-.336-.153.457.457 0 0 0-.335.128L.809 7.29a.487.487 0 0 0 0 .67l2.842 2.958a.461.461 0 0 0 .33.153.487.487 0 0 0 .38-.178l6.96-8.62a.515.515 0 0 0 .102-.33.464.464 0 0 0-.178-.304L11.07.653Z"/>
+                  <svg className="wa-check" viewBox="0 0 16 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12.5 1.5L9.5 3.5L5.5 5" />
+                    <path d="M8.5 4.5L5.5 6.5L1.5 8" />
                   </svg>
                 </div>
               </div>
@@ -349,8 +383,7 @@ export default function Index() {
 
       {/* AGENDA */}
       <div ref={agendaRef}>
-        <section className="relative py-20 md:py-28 bg-gradient-to-b from-background via-primary/[0.02] to-muted overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] via-transparent to-success/[0.03] pointer-events-none" />
+        <section className="relative py-20 md:py-28 overflow-hidden">
           <div className="mx-auto max-w-6xl px-4 relative">
             <div className={`agenda-header-in text-center mb-12 md:mb-16 ${progress > 0.6 ? "visible" : ""}`}>
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-semibold mb-4">
@@ -361,7 +394,7 @@ export default function Index() {
                 Bagunça vira <span className="text-primary">semana organizada</span>
               </h2>
               <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-                24 mensagens. Uma semana. Zero estresse.
+                24 mensagens. Uma semana. Zero estresse. ✨
               </p>
             </div>
 
@@ -422,14 +455,14 @@ export default function Index() {
       </div>
 
       {/* COMO FUNCIONA */}
-      <section className="py-20 md:py-28 bg-muted">
+      <section className="py-20 md:py-28">
         <div className="mx-auto max-w-6xl px-4">
           <div className="text-center mb-16">
             <h2 className="text-[32px] md:text-[44px] font-black text-foreground mb-4" style={{ textWrap: "balance" }}>
-              Em três passos. Sem complicação.
+              Em três passos. Sem complicação. 👇
             </h2>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-              O cliente não precisa baixar app, criar conta, nem aprender nada. É só mandar um zap.
+              O cliente não precisa baixar app, criar conta, nem aprender nada. É só mandar um zap. 📲
             </p>
           </div>
           <div className="grid md:grid-cols-5 gap-8 md:gap-12 items-center">
@@ -474,11 +507,11 @@ export default function Index() {
       </section>
 
       {/* FEATURES */}
-      <section className="py-20 md:py-28 bg-card">
+      <section className="py-20 md:py-28">
         <div className="mx-auto max-w-6xl px-4">
           <div className="text-center mb-16">
             <h2 className="text-[32px] md:text-[44px] font-black text-foreground mb-4" style={{ textWrap: "balance" }}>
-              Tudo que precisa.
+              Tudo que precisa. 🛠️
             </h2>
             <p className="text-lg text-muted-foreground max-w-md mx-auto">
               Funciona sozinho. E se você já usa o ecossistema, fica ainda melhor.
@@ -486,12 +519,12 @@ export default function Index() {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
             {[
-              { i: MessageCircle, t: "WhatsApp nativo", d: "Conecta direto na Evolution API. O cliente manda zap, a IA responde. Sem intermediário.", c: "from-primary to-primary/80" },
-              { i: Bot, t: "IA inteligente", d: "Não é robô com respostas prontas. A IA entende o que o cliente precisa, extrai dados e decide o próximo passo.", c: "from-[#AC39FF] to-[#9333EA]" },
-              { i: CalendarDays, t: "Auto-agendamento", d: "Consulta sua agenda em tempo real e sugere o melhor horário. Se for cliente do Controle Total, integra direto.", c: "from-[#30D158] to-[#28B84B]" },
+              { i: MessageCircle, t: "WhatsApp nativo 😊", d: "Conecta direto na Evolution API. O cliente manda zap, a IA responde. Sem intermediário.", c: "from-primary to-primary/80" },
+              { i: Bot, t: "Entendimento contextual 🤔", d: "Não é robô com respostas prontas. A IA entende o que o cliente precisa, extrai dados e decide o próximo passo.", c: "from-[#AC39FF] to-[#9333EA]" },
+              { i: CalendarDays, t: "Auto-agendamento 😎", d: "Consulta sua agenda em tempo real e sugere o melhor horário. Se for cliente do Controle Total, integra direto.", c: "from-[#30D158] to-[#28B84B]" },
               { i: Users, t: "Histórico completo", d: "Cada conversa fica salva com busca. Você acompanha o que a IA fez e pode intervir quando quiser.", c: "from-[#FF9F0A] to-[#E88F00]" },
-              { i: Smartphone, t: "Painel de conversas", d: "Veja em tempo real o que a IA está respondendo. Entre na conversa com um clique.", c: "from-[#FF375F] to-[#E83056]" },
-              { i: BarChart3, t: "Relatórios", d: "Quantos clientes foram atendidos, quantos agendaram, quantos voltaram. Dados que te ajudam a crescer.", c: "from-[#5E5CE6] to-[#4B49D6]" },
+              { i: Smartphone, t: "Painel de conversas 👀", d: "Veja em tempo real o que a IA está respondendo. Entre na conversa com um clique.", c: "from-[#FF375F] to-[#E83056]" },
+              { i: BarChart3, t: "Relatórios 🤓", d: "Quantos clientes foram atendidos, quantos agendaram, quantos voltaram. Dados que te ajudam a crescer.", c: "from-[#5E5CE6] to-[#4B49D6]" },
             ].map((feat) => (
               <div key={feat.t} className="group relative rounded-2xl p-6 md:p-7 border border-border/80 bg-background hover:shadow-card transition-all duration-300 hover:-translate-y-0.5">
                 <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${feat.c} flex items-center justify-center mb-4 shadow-sm`}>
@@ -506,7 +539,7 @@ export default function Index() {
             <p className="text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-primary" />
-                <strong className="text-foreground font-semibold">IA inteligente</strong> significa que ela entende contexto, não só palavras-chave.
+                Conversa natural, não robô ✨
               </span>
             </p>
           </div>
@@ -514,14 +547,14 @@ export default function Index() {
       </section>
 
       {/* ECOSYSTEM */}
-      <section className="py-20 md:py-28 bg-muted">
+      <section className="py-20 md:py-28">
         <div className="mx-auto max-w-4xl px-4">
           <div className="text-center mb-12">
             <h2 className="text-[28px] md:text-[36px] font-black text-foreground mb-4" style={{ textWrap: "balance" }}>
-              Sozinho já resolve. Com o Controle Total, amplia.
+              Sozinho já resolve. Com o Controle Total, amplia. 🚀
             </h2>
             <p className="text-[17px] text-muted-foreground max-w-xl mx-auto">
-              O Atendente funciona completo por conta própria. Se você também usa o controle total, agenda, clientes e orçamentos ficam integrados.
+              O Atendente funciona completo por conta própria. Se você também usa o Controle Total, agenda, clientes e orçamentos ficam integrados. 🔗
             </p>
           </div>
           <div className="bg-card rounded-2xl p-8 md:p-10 border border-border/80 text-center">
@@ -550,9 +583,9 @@ export default function Index() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,hsl(0,0%,100%,0.1),transparent_60%)]" />
         <div className="mx-auto max-w-2xl px-4 text-center relative">
           <h2 className="text-[32px] md:text-[44px] font-black text-white mb-4" style={{ textWrap: "balance" }}>
-            Testa grátis.<br />Depois você vê.
+            Testa por 30 dias.<br />Vai por mim... 😉
           </h2>
-          <p className="text-lg text-white/80 mb-8">Sem cartão. Sem compromisso. A IA já começa a atender hoje.</p>
+          <p className="text-lg text-white/80 mb-8">Sem cartão. Sem compromisso. A IA já começa a atender hoje. 🤖</p>
           <Button className="bg-white text-primary hover:bg-white/90 rounded-full px-8 h-[48px] text-[15px] font-bold cursor-pointer hover:scale-[1.03]">
             Criar conta grátis <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
@@ -560,7 +593,7 @@ export default function Index() {
       </section>
 
       {/* FOOTER */}
-      <footer className="py-10 bg-card border-t border-border/50">
+      <footer className="py-10 border-t border-border/50">
         <div className="mx-auto max-w-6xl px-4">
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-2 group">
@@ -576,7 +609,7 @@ export default function Index() {
               <a href="mailto:contato@atendente.app" className="hover:text-foreground transition-colors cursor-pointer">Contato</a>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground/60">&copy; 2026 Atendente — Um produto do ecossistema Controle Total</p>
+          <p className="text-xs text-muted-foreground/60">&copy; 2026 Atendente — Um produto do ecossistema Controle Total 💙</p>
         </div>
       </footer>
     </div>
