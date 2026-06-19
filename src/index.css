@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 218 32% 98.2%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 220 78% 48%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 220 78% 42%;
+    --secondary: 217 35% 95.5%;
+    --secondary-foreground: 222 47% 11%;
+    --success: 152 55% 42%;
+    --success-foreground: 0 0% 100%;
+    --muted: 217 30% 95.5%;
+    --muted-foreground: 218 16% 56%;
+    --accent: 215 40% 94.5%;
+    --accent-foreground: 220 78% 48%;
+    --destructive: 354 75% 58%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 218 20% 90.5%;
+    --input: 218 20% 90.5%;
+    --ring: 220 78% 48%;
+    --radius: 0.75rem;
+    --surface-warm: 40 50% 96%;
+    --surface-blush: 350 60% 97%;
+    --gradient-primary: linear-gradient(135deg, hsl(220 78% 48%), hsl(220 78% 38%));
+    --gradient-success: linear-gradient(135deg, hsl(152 55% 42%), hsl(152 55% 32%));
+    --gradient-hero: linear-gradient(135deg, hsl(220 78% 48%), hsl(220 78% 38%), hsl(152 55% 42%));
+    --shadow-card: 0 4px 20px -2px hsl(220 30% 90% / 0.15), 0 2px 8px -1px hsl(220 30% 90% / 0.1);
+    --shadow-elevated: 0 10px 30px -5px hsl(220 30% 90% / 0.25), 0 4px 12px -2px hsl(220 30% 90% / 0.15);
+    --shadow-primary: 0 4px 16px hsl(220 78% 48% / 0.18);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html, body {
+    @apply bg-background text-foreground;
+    overflow-x: hidden;
+  }
+  #root {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+}

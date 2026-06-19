@@ -1,0 +1,25 @@
+version: "3.8"
+
+services:
+  evolution-api:
+    image: atendai/evolution-api:v2.1.0
+    container_name: evolution_atendente
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      AUTHENTICATION_TYPE: "apikey"
+      AUTHENTICATION_API_KEY: "ev_atendente_dev_key_123"
+      DATABASE_ENABLED: "true"
+      DATABASE_CONNECTION: "sqlite"
+      DATABASE_CONNECTION_URI: "/evolution/database.sqlite"
+      LOG_LEVEL: "info"
+      LOG_FILE: "/evolution/logs/log.txt"
+      DEL_INSTANCE: "false"
+      WEBHOOK_GLOBAL_URL: ""
+      WEBHOOK_GLOBAL_BY_EVENTS: "false"
+    volumes:
+      - evolution_data:/evolution
+
+volumes:
+  evolution_data:
