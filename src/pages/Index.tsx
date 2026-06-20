@@ -487,7 +487,7 @@ export default function Index() {
       </div>
 
       {/* COMO FUNCIONA */}
-      <section className="py-20 md:py-28">
+      <section id="como-funciona" className="py-20 md:py-28">
         <div className="mx-auto max-w-6xl px-4">
           <div className="text-center mb-16">
             <h2 className="text-[32px] md:text-[44px] font-black text-foreground mb-4" style={{ textWrap: "balance" }}>
@@ -539,7 +539,7 @@ export default function Index() {
       </section>
 
       {/* FEATURES */}
-      <section className="py-20 md:py-28">
+      <section id="ferramentas" className="py-20 md:py-28">
         <div className="mx-auto max-w-6xl px-4">
           <div className="text-center mb-16">
             <h2 className="text-[32px] md:text-[44px] font-black text-foreground mb-4" style={{ textWrap: "balance" }}>
@@ -610,7 +610,7 @@ export default function Index() {
       </section>
 
       {/* CTA */}
-      <section className="py-24 md:py-32 relative overflow-hidden">
+      <section id="precos" className="py-24 md:py-32 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-tr from-primary via-primary to-success/80" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,hsl(0,0%,100%,0.1),transparent_60%)]" />
         <div className="mx-auto max-w-2xl px-4 text-center relative">
