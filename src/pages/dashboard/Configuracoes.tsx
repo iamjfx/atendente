@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAccount } from "@/contexts/AccountContext";
 import { supabase } from "@/integrations/supabase/client";
+import { Label } from "@/components/ui/label";
+import AgendaIntegracoesSection from "@/components/configuracoes/AgendaIntegracoesSection";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 
@@ -262,6 +264,8 @@ export default function Configuracoes() {
           )}
         </CardContent>
       </Card>
+
+      <AgendaIntegracoesSection />
 
       <Card>
         <CardHeader>
