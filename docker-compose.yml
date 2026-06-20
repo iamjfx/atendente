@@ -1,8 +1,21 @@
-version: "3.8"
-
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: atendente_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: evolution_user
+      POSTGRES_PASSWORD: evolution_pass
+      POSTGRES_DB: evolution
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
   evolution-api:
-    image: atendai/evolution-api:v2.1.0
+    image: evoapicloud/evolution-api:latest
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     container_name: evolution_atendente
     restart: always
     ports:
@@ -11,15 +24,29 @@ services:
       AUTHENTICATION_TYPE: "apikey"
       AUTHENTICATION_API_KEY: "ev_atendente_dev_key_123"
       DATABASE_ENABLED: "true"
-      DATABASE_CONNECTION: "sqlite"
-      DATABASE_CONNECTION_URI: "/evolution/database.sqlite"
+      DATABASE_PROVIDER: "postgresql"
+      DATABASE_CONNECTION_URI: "postgresql://evolution_user:evolution_pass@postgres:5432/evolution"
+      DATABASE_CONNECTION_CLIENT_NAME: "evolution_atendente"
+      DATABASE_SAVE_DATA_INSTANCE: "true"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "true"
+      DATABASE_SAVE_MESSAGE_UPDATE: "true"
+      DATABASE_SAVE_DATA_CONTACTS: "true"
+      DATABASE_SAVE_DATA_CHATS: "true"
+      DATABASE_SAVE_DATA_HISTORIC: "true"
       LOG_LEVEL: "info"
-      LOG_FILE: "/evolution/logs/log.txt"
+      LOG_FILE: "/tmp/evolution_log.txt"
+      LOG_BAILEYS: "debug"
       DEL_INSTANCE: "false"
-      WEBHOOK_GLOBAL_URL: ""
-      WEBHOOK_GLOBAL_BY_EVENTS: "false"
+      QRCODE_LIMIT: "30"
+      CONFIG_SESSION_PHONE_VERSION: "2.3000.1035194821"
+      WEBHOOK_GLOBAL_URL: "http://host.docker.internal:3001/webhook"
+      WEBHOOK_GLOBAL_BY_EVENTS: "true"
+      WEBHOOK_GLOBAL_ENABLED: "true"
+    depends_on:
+      - postgres
     volumes:
       - evolution_data:/evolution
 
 volumes:
   evolution_data:
+  postgres_data:

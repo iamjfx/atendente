@@ -35,6 +35,15 @@
     --shadow-card: 0 4px 20px -2px hsl(220 30% 90% / 0.15), 0 2px 8px -1px hsl(220 30% 90% / 0.1);
     --shadow-elevated: 0 10px 30px -5px hsl(220 30% 90% / 0.25), 0 4px 12px -2px hsl(220 30% 90% / 0.15);
     --shadow-primary: 0 4px 16px hsl(220 78% 48% / 0.18);
+
+    --sidebar-background: 220 32% 97.2%;
+    --sidebar-foreground: 220 20% 30%;
+    --sidebar-primary: 220 78% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 217 40% 93.5%;
+    --sidebar-accent-foreground: 220 78% 35%;
+    --sidebar-border: 218 20% 90.5%;
+    --sidebar-ring: 220 78% 48%;
   }
 }
 

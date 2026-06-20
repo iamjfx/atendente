@@ -16,30 +16,30 @@ const Logo = () => (
 );
 
 const messages = [
-  { id: 1, name: "Carlos", text: "Olá, gostaria de fazer um orçamento pra pintar 3 cômodos", time: "08:30", emoji: "", day: "seg" },
-  { id: 2, name: "Maria", text: "Bom dia, quando consegue passar pra ver o quadro elétrico?", time: "10:00", emoji: "", day: "seg" },
-  { id: 3, name: "José", text: "Preciso de um eletricista urgente 😰 o disjuntor queimou e apagou tudo aqui", time: "10:45", emoji: "😰", day: "seg" },
-  { id: 4, name: "Fernanda", text: "Quanto fica pra instalar um chuveiro novo? Tem urgência 🔥", time: "11:30", emoji: "🔥", day: "seg" },
-  { id: 5, name: "Ricardo", text: "Pode vir hoje ver um vazamento no banheiro?", time: "13:15", emoji: "", day: "seg" },
-  { id: 6, name: "Juliana", text: "⚠️ O ar condicionado parou do nada, tá um calor aqui 🥵", time: "14:00", emoji: "⚠️", day: "seg" },
-  { id: 7, name: "Pedro", text: "Pode vir amanhã de manhã ver o vazamento?", time: "08:00", emoji: "", day: "ter" },
-  { id: 8, name: "Lúcia", text: "🔴 Emergência!!! O chuveiro tá vazando água no banheiro inteiro", time: "09:00", emoji: "🔴", day: "ter" },
-  { id: 9, name: "Marcos", text: "Instalação de ventilador de teto, quanto fica?", time: "10:30", emoji: "", day: "ter" },
-  { id: 10, name: "Carla", text: "O portão elétrico não abre mais 🆘 não consigo sair de casa", time: "14:00", emoji: "🆘", day: "ter" },
-  { id: 11, name: "Rogério", text: "Faz orçamento de encanamento pro banheiro?", time: "15:30", emoji: "", day: "ter" },
-  { id: 12, name: "Patrícia", text: "🚨🚨 A CAIXA D'ÁGUA ESTOUROU, tá inundando o quintal!!!!", time: "07:30", emoji: "🚨", day: "qua" },
-  { id: 13, name: "Eduardo", text: "Troca de registro de água, faz esse serviço?", time: "09:00", emoji: "", day: "qua" },
-  { id: 14, name: "Camila", text: "Bom dia! Preciso de um orçamento pra reformar o banheiro inteiro", time: "10:00", emoji: "", day: "qua" },
-  { id: 15, name: "Luciano", text: "😰 A máquina de lavar tá vazando e alagando a área, pode vir urgente?", time: "11:30", emoji: "😰", day: "qua" },
-  { id: 16, name: "Tatiane", text: "Instalação de torneira nova na cozinha", time: "15:00", emoji: "", day: "qua" },
-  { id: 17, name: "Roberto", text: "Faz manutenção em aquecedor a gás?", time: "08:30", emoji: "", day: "qui" },
-  { id: 18, name: "Simone", text: "⚠️⚠️ A fiação do quarto está fazendo curto, ajuda pelo amor de Deus ⚠️⚠️", time: "10:00", emoji: "⚠️", day: "qui" },
-  { id: 19, name: "André", text: "Pode fazer orçamento de pintura externa?", time: "13:30", emoji: "", day: "qui" },
-  { id: 20, name: "Débora", text: "A campainha não funciona mais", time: "16:00", emoji: "", day: "qui" },
-  { id: 21, name: "Sandra", text: "Pode vir hoje? O encanamento estourou, tô desesperada 😰😰", time: "08:00", emoji: "😰", day: "sex" },
-  { id: 22, name: "Fábio", text: "🔴🔴🔴 Não aguento mais, a goteira no teto não para nunca", time: "09:30", emoji: "🔴", day: "sex" },
-  { id: 23, name: "Alice", text: "Consegue trocar o chuveiro hoje à tarde?", time: "13:00", emoji: "", day: "sex" },
-  { id: 24, name: "Vinícius", text: "Quero automatizar o portão, faz esse serviço?", time: "15:30", emoji: "", day: "sex" },
+  { id: 1, name: "Carlos", text: "Olá, gostaria de fazer um orçamento pra pintar 3 cômodos", time: "08:30", emoji: "", day: "seg", service: "Pintura de 3 cômodos" },
+  { id: 2, name: "Maria", text: "Bom dia, quando consegue passar pra ver o quadro elétrico?", time: "10:00", emoji: "", day: "seg", service: "Verificação de quadro elétrico" },
+  { id: 3, name: "José", text: "Preciso de um eletricista urgente 😰 o disjuntor queimou e apagou tudo aqui", time: "10:45", emoji: "😰", day: "seg", service: "Troca de disjuntor" },
+  { id: 4, name: "Fernanda", text: "Quanto fica pra instalar um chuveiro novo? Tem urgência 🔥", time: "11:30", emoji: "🔥", day: "seg", service: "Instalação de chuveiro" },
+  { id: 5, name: "Ricardo", text: "Pode vir hoje ver um vazamento no banheiro?", time: "13:15", emoji: "", day: "seg", service: "Reparo de vazamento" },
+  { id: 6, name: "Juliana", text: "⚠️ O ar condicionado parou do nada, tá um calor aqui 🥵", time: "14:00", emoji: "⚠️", day: "seg", service: "Manutenção de ar condicionado" },
+  { id: 7, name: "Pedro", text: "Pode vir amanhã de manhã ver o vazamento?", time: "08:00", emoji: "", day: "ter", service: "Conserto de vazamento" },
+  { id: 8, name: "Lúcia", text: "🔴 Emergência!!! O chuveiro tá vazando água no banheiro inteiro", time: "09:00", emoji: "🔴", day: "ter", service: "Vazamento no chuveiro" },
+  { id: 9, name: "Marcos", text: "Instalação de ventilador de teto, quanto fica?", time: "10:30", emoji: "", day: "ter", service: "Instalação de ventilador" },
+  { id: 10, name: "Carla", text: "O portão elétrico não abre mais 🆘 não consigo sair de casa", time: "14:00", emoji: "🆘", day: "ter", service: "Reparo de portão elétrico" },
+  { id: 11, name: "Rogério", text: "Faz orçamento de encanamento pro banheiro?", time: "15:30", emoji: "", day: "ter", service: "Encanamento do banheiro" },
+  { id: 12, name: "Patrícia", text: "🚨🚨 A CAIXA D'ÁGUA ESTOUROU, tá inundando o quintal!!!!", time: "07:30", emoji: "🚨", day: "qua", service: "Vazamento de caixa d'água" },
+  { id: 13, name: "Eduardo", text: "Troca de registro de água, faz esse serviço?", time: "09:00", emoji: "", day: "qua", service: "Troca de registro de água" },
+  { id: 14, name: "Camila", text: "Bom dia! Preciso de um orçamento pra reformar o banheiro inteiro", time: "10:00", emoji: "", day: "qua", service: "Reforma do banheiro" },
+  { id: 15, name: "Luciano", text: "😰 A máquina de lavar tá vazando e alagando a área, pode vir urgente?", time: "11:30", emoji: "😰", day: "qua", service: "Vazamento na máquina de lavar" },
+  { id: 16, name: "Tatiane", text: "Instalação de torneira nova na cozinha", time: "15:00", emoji: "", day: "qua", service: "Instalação de torneira" },
+  { id: 17, name: "Roberto", text: "Faz manutenção em aquecedor a gás?", time: "08:30", emoji: "", day: "qui", service: "Manutenção de aquecedor a gás" },
+  { id: 18, name: "Simone", text: "⚠️⚠️ A fiação do quarto está fazendo curto, ajuda pelo amor de Deus ⚠️⚠️", time: "10:00", emoji: "⚠️", day: "qui", service: "Curto-circuito na fiação" },
+  { id: 19, name: "André", text: "Pode fazer orçamento de pintura externa?", time: "13:30", emoji: "", day: "qui", service: "Pintura externa" },
+  { id: 20, name: "Débora", text: "A campainha não funciona mais", time: "16:00", emoji: "", day: "qui", service: "Conserto de campainha" },
+  { id: 21, name: "Sandra", text: "Pode vir hoje? O encanamento estourou, tô desesperada 😰😰", time: "08:00", emoji: "😰", day: "sex", service: "Vazamento no encanamento" },
+  { id: 22, name: "Fábio", text: "🔴🔴🔴 Não aguento mais, a goteira no teto não para nunca", time: "09:30", emoji: "🔴", day: "sex", service: "Goteira no teto" },
+  { id: 23, name: "Alice", text: "Consegue trocar o chuveiro hoje à tarde?", time: "13:00", emoji: "", day: "sex", service: "Troca de chuveiro" },
+  { id: 24, name: "Vinícius", text: "Quero automatizar o portão, faz esse serviço?", time: "15:30", emoji: "", day: "sex", service: "Automação de portão" },
 ];
 
 const avatarColors = [
@@ -110,6 +110,9 @@ export default function Index() {
   const agendaRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLElement>(null);
   const rafRef = useRef(0);
+  const wordRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const subtitleRef = useRef<HTMLParagraphElement>(null);
+  const badgeRef = useRef<HTMLDivElement>(null);
 
   const updatePositions = useCallback(() => {
     const hero = heroRef.current;
@@ -161,6 +164,28 @@ export default function Index() {
       bubble.style.transform = `translate(-50%,-50%) translate(${finalX}px,${finalY}px) rotate(${rot}deg) scale(${scale})`;
       bubble.style.opacity = String(1 - Math.max(0, Math.min(1, (rawProgress - 0.6) / 0.15)));
     });
+
+    const wordWindows = [
+      { el: badgeRef.current, start: 0.0, end: 0.10 },
+      { el: wordRefs.current[0], start: 0.0, end: 0.10 },
+      { el: wordRefs.current[1], start: 0.06, end: 0.16 },
+      { el: wordRefs.current[2], start: 0.12, end: 0.24 },
+      { el: wordRefs.current[3], start: 0.20, end: 0.34 },
+    ];
+    wordWindows.forEach(({ el, start, end }) => {
+      if (!el) return;
+      const t = Math.max(0, Math.min(1, (rawProgress - start) / (end - start)));
+      const eased = 1 - Math.pow(1 - t, 3);
+      el.style.opacity = String(eased);
+      el.style.transform = `translateY(${(1 - eased) * 40}px)`;
+    });
+
+    if (subtitleRef.current) {
+      const t = Math.max(0, Math.min(1, (rawProgress - 0.30) / 0.15));
+      const eased = 1 - Math.pow(1 - t, 3);
+      subtitleRef.current.style.opacity = String(eased);
+      subtitleRef.current.style.transform = `translateY(${(1 - eased) * 24}px)`;
+    }
 
     rafRef.current = requestAnimationFrame(updatePositions);
   }, []);
@@ -385,15 +410,21 @@ export default function Index() {
       <div ref={agendaRef}>
         <section className="relative py-20 md:py-28 overflow-hidden">
           <div className="mx-auto max-w-6xl px-4 relative">
-            <div className={`agenda-header-in text-center mb-12 md:mb-16 ${progress > 0.6 ? "visible" : ""}`}>
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-semibold mb-4">
+            <div className={`text-center mb-12 md:mb-16`}>
+              <div ref={badgeRef} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-semibold mb-4" style={{ opacity: 0 }}>
                 <CalendarDays className="w-4 h-4" />
                 Agenda inteligente
               </div>
               <h2 className="text-[32px] md:text-[44px] font-black text-foreground mb-3" style={{ textWrap: "balance" }}>
-                Bagunça vira <span className="text-primary">semana organizada</span>
+                <span ref={(el) => { wordRefs.current[0] = el; }} className="inline-block" style={{ opacity: 0 }}>Bagunça</span>
+                <span> </span>
+                <span ref={(el) => { wordRefs.current[1] = el; }} className="inline-block" style={{ opacity: 0 }}>vira</span>
+                <span> </span>
+                <span ref={(el) => { wordRefs.current[2] = el; }} className="inline-block" style={{ opacity: 0 }}>semana</span>
+                <span> </span>
+                <span ref={(el) => { wordRefs.current[3] = el; }} className="inline-block text-primary" style={{ opacity: 0 }}>organizada</span>
               </h2>
-              <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+              <p ref={subtitleRef} className="text-lg text-muted-foreground max-w-xl mx-auto" style={{ opacity: 0 }}>
                 24 mensagens. Uma semana. Zero estresse. ✨
               </p>
             </div>
@@ -433,7 +464,7 @@ export default function Index() {
                                         {msg.time}
                                       </span>
                                     </div>
-                                    <p className="text-[10px] md:text-xs text-muted-foreground/80 leading-snug line-clamp-1 mt-0.5">{msg.text}</p>
+                                    <p className="text-[10px] md:text-xs text-muted-foreground/80 leading-snug line-clamp-1 mt-0.5">{msg.service}</p>
                                   </div>
                                 </div>
                               </div>
