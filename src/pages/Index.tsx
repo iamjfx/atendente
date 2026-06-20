@@ -248,7 +248,7 @@ export default function Index() {
           top: 0;
           left: 0;
           pointer-events: none;
-          z-index: 50;
+          z-index: 40;
           will-change: transform, opacity;
           transition: none;
         }
