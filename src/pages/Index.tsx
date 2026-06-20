@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   MessageCircle, CalendarDays, Bot, Smartphone,
@@ -342,8 +343,8 @@ export default function Index() {
             <a href="#ferramentas" className="hover:text-foreground/85 transition-colors">Ferramentas</a>
             <a href="#precos" className="hover:text-foreground/85 transition-colors">Preços</a>
             <div className="flex items-center gap-2">
-              <a href="/auth"><Button size="sm" variant="outline" className="border-border/60 text-muted-foreground hover:text-foreground hover:bg-accent text-xs rounded-full px-4 h-8">Entrar</Button></a>
-              <a href="/auth"><Button size="sm" className="bg-foreground text-background hover:bg-foreground/90 text-xs rounded-full px-5 h-8">Criar conta</Button></a>
+              <Link to="/auth"><Button size="sm" variant="outline" className="border-border/60 text-muted-foreground hover:text-foreground hover:bg-accent text-xs rounded-full px-4 h-8">Entrar</Button></Link>
+              <Link to="/auth" state={{ tab: "signup" }}><Button size="sm" className="bg-foreground text-background hover:bg-foreground/90 text-xs rounded-full px-5 h-8">Criar conta</Button></Link>
             </div>
           </nav>
           <button className="md:hidden p-1" onClick={() => setMobileOpen(!mobileOpen)}>
@@ -355,8 +356,8 @@ export default function Index() {
             <a href="#como-funciona" className="block text-sm" onClick={() => setMobileOpen(false)}>Como funciona</a>
             <a href="#ferramentas" className="block text-sm" onClick={() => setMobileOpen(false)}>Ferramentas</a>
             <a href="#precos" className="block text-sm" onClick={() => setMobileOpen(false)}>Preços</a>
-            <a href="/auth" onClick={() => setMobileOpen(false)}><Button size="sm" variant="outline" className="w-full border-border/60 text-muted-foreground">Entrar</Button></a>
-            <a href="/auth" onClick={() => setMobileOpen(false)}><Button size="sm" className="w-full bg-foreground text-background">Criar conta</Button></a>
+            <Link to="/auth" onClick={() => setMobileOpen(false)}><Button size="sm" variant="outline" className="w-full border-border/60 text-muted-foreground">Entrar</Button></Link>
+            <Link to="/auth" state={{ tab: "signup" }} onClick={() => setMobileOpen(false)}><Button size="sm" className="w-full bg-foreground text-background">Criar conta</Button></Link>
           </div>
         )}
       </header>

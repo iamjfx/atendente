@@ -107,7 +107,7 @@ async function loadHistory(conversationId: string, instanceName: string): Promis
 
 async function processAudio(
   instanceName: string,
-  instanceRecord: { id: string; account_id: string; instance_name: string },
+  instanceRecord: { id: string; account_id: string; instance_name: string; assistantName?: string; businessName?: string },
   remoteJid: string,
   message: Record<string, unknown>,
   pushName?: string
@@ -159,7 +159,13 @@ async function processAudio(
   });
 
   console.log(`Processando áudio do Gemini para ${remoteJid}`);
-  const aiResponse = await generateResponse(history, pushName, audioInline);
+  const aiResponse = await generateResponse(
+    history,
+    pushName,
+    audioInline,
+    instanceRecord.assistantName,
+    instanceRecord.businessName
+  );
 
   if (!aiResponse || aiResponse.trim().length === 0) {
     console.log(`IA retornou resposta vazia para áudio de ${remoteJid}`);
@@ -184,7 +190,7 @@ async function processAudio(
 
 async function processText(
   instanceName: string,
-  instanceRecord: { id: string; account_id: string; instance_name: string },
+  instanceRecord: { id: string; account_id: string; instance_name: string; assistantName?: string; businessName?: string },
   remoteJid: string,
   content: string,
   pushName?: string
@@ -203,7 +209,13 @@ async function processText(
   history.push({ role: "user", parts: content });
 
   console.log(`Gerando resposta IA para ${remoteJid} (conv: ${conversationId})`);
-  const aiResponse = await generateResponse(history, pushName);
+  const aiResponse = await generateResponse(
+    history,
+    pushName,
+    undefined,
+    instanceRecord.assistantName,
+    instanceRecord.businessName
+  );
 
   if (!aiResponse || aiResponse.trim().length === 0) {
     console.log(`IA retornou resposta vazia para ${remoteJid}`);
@@ -255,10 +267,22 @@ export async function handleIncomingMessage(payload: unknown) {
 
   const isAudio = !!data.message?.audioMessage;
 
+  const { data: profileRecord } = await supabase
+    .from("profiles")
+    .select("nome_ia, nome_fantasia")
+    .eq("id", instanceRecord.account_id)
+    .single();
+
+  const instanceWithProfile = {
+    ...instanceRecord,
+    assistantName: profileRecord?.nome_ia || undefined,
+    businessName: profileRecord?.nome_fantasia || undefined,
+  };
+
   if (isAudio) {
     return processAudio(
       instance,
-      instanceRecord,
+      instanceWithProfile,
       remoteJid,
       { key: data.key, message: data.message },
       data.pushName
@@ -273,7 +297,7 @@ export async function handleIncomingMessage(payload: unknown) {
 
   return processText(
     instance,
-    instanceRecord,
+    instanceWithProfile,
     remoteJid,
     content,
     data.pushName

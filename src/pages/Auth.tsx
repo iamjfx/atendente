@@ -28,7 +28,9 @@ export default function Auth() {
   const location = useLocation();
   const from = (location.state as any)?.from ?? "/admin";
 
-  const [tab, setTab] = useState<"login" | "signup">("login");
+  const [tab, setTab] = useState<"login" | "signup">(
+    (location.state as any)?.tab === "signup" ? "signup" : "login"
+  );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [nome, setNome] = useState("");
@@ -54,7 +56,7 @@ export default function Auth() {
     setBusy(true);
     setError("");
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -66,8 +68,19 @@ export default function Auth() {
       setBusy(false);
       return;
     }
-    setError("Conta criada! Verifique seu email para confirmar.");
+
+    if (!data.session) {
+      // Tenta fazer o login automático com a senha fornecida
+      const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+      if (loginError) {
+        setError(loginError.message);
+        setBusy(false);
+        return;
+      }
+    }
+
     setBusy(false);
+    navigate(from, { replace: true });
   }
 
   return (

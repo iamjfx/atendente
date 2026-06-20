@@ -94,7 +94,7 @@ export default function Dashboard() {
     <div className="space-y-6 max-w-5xl">
       <div>
         <h2 className="text-2xl font-bold text-foreground">
-          {greeting}, {profile?.nome?.split(" ")[0] ?? "usuário"} 👋
+          {greeting}, {profile?.nome_usuario?.split(" ")[0] ?? profile?.nome?.split(" ")[0] ?? "usuário"} 👋
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
           Resumo do seu atendente inteligente

@@ -1,49 +1,60 @@
 import { supabase } from "../lib/supabase.js";
 import { sendMessage } from "../lib/evolution.js";
 
-export async function processQueue() {
-  const { data: pending, error } = await supabase
-    .from("message_queue")
-    .select("*, evolution_instances!inner(instance_name)")
-    .eq("status", "pending")
-    .order("created_at", { ascending: true })
-    .limit(10);
+let isProcessing = false;
 
-  if (error) {
-    console.error("Erro ao buscar fila de mensagens:", error.message);
+export async function processQueue() {
+  if (isProcessing) {
     return;
   }
+  isProcessing = true;
 
-  if (!pending || pending.length === 0) return;
+  try {
+    const { data: pending, error } = await supabase
+      .from("message_queue")
+      .select("*, evolution_instances!inner(instance_name)")
+      .eq("status", "pending")
+      .order("created_at", { ascending: true })
+      .limit(10);
 
-  console.log(`Processando ${pending.length} mensagens na fila...`);
-
-  for (const item of pending) {
-    try {
-      await supabase
-        .from("message_queue")
-        .update({ status: "sending" })
-        .eq("id", item.id);
-
-      const instanceName = (item as unknown as { evolution_instances: { instance_name: string } }).evolution_instances.instance_name;
-
-      await sendMessage(instanceName, item.remote_jid, item.content);
-
-      await supabase
-        .from("message_queue")
-        .update({ status: "sent", sent_at: new Date().toISOString() })
-        .eq("id", item.id);
-
-      console.log(`Fila: mensagem ${item.id} enviada para ${item.remote_jid}`);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Unknown error";
-      console.error(`Fila: erro ao enviar mensagem ${item.id}:`, message);
-
-      await supabase
-        .from("message_queue")
-        .update({ status: "failed", error: message })
-        .eq("id", item.id);
+    if (error) {
+      console.error("Erro ao buscar fila de mensagens:", error.message);
+      return;
     }
+
+    if (!pending || pending.length === 0) return;
+
+    console.log(`Processando ${pending.length} mensagens na fila...`);
+
+    for (const item of pending) {
+      try {
+        await supabase
+          .from("message_queue")
+          .update({ status: "sending" })
+          .eq("id", item.id);
+
+        const instanceName = (item as unknown as { evolution_instances: { instance_name: string } }).evolution_instances.instance_name;
+
+        await sendMessage(instanceName, item.remote_jid, item.content);
+
+        await supabase
+          .from("message_queue")
+          .update({ status: "sent", sent_at: new Date().toISOString() })
+          .eq("id", item.id);
+
+        console.log(`Fila: mensagem ${item.id} enviada para ${item.remote_jid}`);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Unknown error";
+        console.error(`Fila: erro ao enviar mensagem ${item.id}:`, message);
+
+        await supabase
+          .from("message_queue")
+          .update({ status: "failed", error: message })
+          .eq("id", item.id);
+      }
+    }
+  } finally {
+    isProcessing = false;
   }
 }
 

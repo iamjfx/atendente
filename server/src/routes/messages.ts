@@ -1,11 +1,19 @@
-import { Router, Request, Response } from "express";
+import { Router, Response } from "express";
 import { supabase } from "../lib/supabase.js";
 import { z } from "zod";
+import { authMiddleware, AuthenticatedRequest } from "../middlewares/auth.js";
 
 const router = Router();
 
-router.get("/conversations/:accountId", async (req: Request, res: Response) => {
+// Apply authentication middleware
+router.use(authMiddleware);
+
+router.get("/conversations/:accountId", async (req: AuthenticatedRequest, res: Response) => {
   const { accountId } = req.params;
+
+  if (req.user.id !== accountId) {
+    return res.status(403).json({ error: "Forbidden: Access denied to this account" });
+  }
 
   const { data: conversations, error } = await supabase
     .from("conversations")
@@ -21,8 +29,23 @@ router.get("/conversations/:accountId", async (req: Request, res: Response) => {
   res.json(conversations || []);
 });
 
-router.get("/:conversationId", async (req: Request, res: Response) => {
+router.get("/:conversationId", async (req: AuthenticatedRequest, res: Response) => {
   const { conversationId } = req.params;
+
+  // Verify conversation ownership
+  const { data: conv, error: convErr } = await supabase
+    .from("conversations")
+    .select("account_id")
+    .eq("id", conversationId)
+    .single();
+
+  if (convErr || !conv) {
+    return res.status(404).json({ error: "Conversation not found" });
+  }
+
+  if (conv.account_id !== req.user.id) {
+    return res.status(403).json({ error: "Forbidden: You do not own this conversation" });
+  }
   const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
 
   const { data: messages, error } = await supabase
@@ -39,7 +62,7 @@ router.get("/:conversationId", async (req: Request, res: Response) => {
   res.json((messages || []).reverse());
 });
 
-router.post("/send", async (req: Request, res: Response) => {
+router.post("/send", async (req: AuthenticatedRequest, res: Response) => {
   const schema = z.object({
     conversationId: z.string().uuid(),
     text: z.string().min(1).max(4096),
@@ -60,6 +83,10 @@ router.post("/send", async (req: Request, res: Response) => {
 
   if (convError || !conversation) {
     return res.status(404).json({ error: "Conversation not found" });
+  }
+
+  if (conversation.account_id !== req.user.id) {
+    return res.status(403).json({ error: "Forbidden: You do not own this conversation" });
   }
 
   const { data: instance, error: instError } = await supabase

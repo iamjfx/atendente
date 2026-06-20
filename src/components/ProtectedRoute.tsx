@@ -10,7 +10,7 @@ interface Props {
 
 export default function ProtectedRoute({ children, product }: Props) {
   const { user, loading: authLoading } = useAuth();
-  const { hasProduct, loading: accountLoading } = useAccount();
+  const { profile, hasProduct, loading: accountLoading } = useAccount();
   const location = useLocation();
 
   if (authLoading || accountLoading) {
@@ -23,6 +23,10 @@ export default function ProtectedRoute({ children, product }: Props) {
 
   if (!user) {
     return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
+  }
+
+  if (profile && !profile.onboarding_completo && location.pathname !== "/onboarding") {
+    return <Navigate to="/onboarding" replace />;
   }
 
   if (product && !hasProduct(product)) {

@@ -11,13 +11,17 @@ interface AccountContextValue {
   profile: {
     id: string;
     nome: string;
+    nome_usuario: string | null;
+    nome_ia: string | null;
     email: string | null;
     nome_fantasia: string | null;
     logo_url: string | null;
+    onboarding_completo: boolean;
   } | null;
   products: ProductAccess[];
   loading: boolean;
   hasProduct: (slug: string) => boolean;
+  refetch: () => Promise<void>;
 }
 
 const AccountContext = createContext<AccountContextValue>({
@@ -25,6 +29,7 @@ const AccountContext = createContext<AccountContextValue>({
   products: [],
   loading: true,
   hasProduct: () => false,
+  refetch: async () => {},
 });
 
 export function AccountProvider({ children }: { children: ReactNode }) {
@@ -32,6 +37,45 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<AccountContextValue["profile"]>(null);
   const [products, setProducts] = useState<ProductAccess[]>([]);
   const [loading, setLoading] = useState(true);
+
+  async function load() {
+    if (!user) return;
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("id, nome, nome_usuario, nome_ia, email, nome_fantasia, logo_url, onboarding_completo")
+      .eq("id", user.id)
+      .single();
+
+    const ownerId = profileData?.id ?? user.id;
+
+    const { data: productRows } = await supabase
+      .from("account_products")
+      .select("product_slug, ativo")
+      .eq("account_id", ownerId);
+
+    setProfile(profileData ?? {
+      id: user.id,
+      nome: user.email ?? "",
+      nome_usuario: null,
+      nome_ia: null,
+      email: user.email,
+      nome_fantasia: null,
+      logo_url: null,
+      onboarding_completo: false
+    });
+
+    const loaded = productRows?.map(r => ({ slug: r.product_slug, ativo: r.ativo })) ?? [];
+
+    const idx = loaded.findIndex(p => p.slug === "atendente");
+    if (idx >= 0) {
+      loaded[idx].ativo = true;
+    } else {
+      loaded.push({ slug: "atendente", ativo: true });
+    }
+
+    setProducts(loaded);
+    setLoading(false);
+  }
 
   useEffect(() => {
     if (!user) {
@@ -41,52 +85,20 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    let cancelled = false;
-
-    async function load() {
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("id, nome, email, nome_fantasia, logo_url")
-        .eq("id", user.id)
-        .single();
-
-      if (cancelled) return;
-
-      const ownerId = profileData?.id ?? user.id;
-
-      const { data: productRows } = await supabase
-        .from("account_products")
-        .select("product_slug, ativo")
-        .eq("account_id", ownerId);
-
-      if (cancelled) return;
-
-      setProfile(profileData ?? { id: user.id, nome: user.email ?? "", email: user.email, nome_fantasia: null, logo_url: null });
-
-      const loaded = productRows?.map(r => ({ slug: r.product_slug, ativo: r.ativo })) ?? [];
-
-      const idx = loaded.findIndex(p => p.slug === "atendente");
-      if (idx >= 0) {
-        loaded[idx].ativo = true;
-      } else {
-        loaded.push({ slug: "atendente", ativo: true });
-      }
-
-      setProducts(loaded);
-      setLoading(false);
-    }
-
     load();
-
-    return () => { cancelled = true; };
   }, [user]);
 
+  const refetch = async () => {
+    await load();
+  };
+
   const hasProduct = (slug: string) => {
+    if (slug === "atendente") return true;
     return products.some(p => p.slug === slug && p.ativo);
   };
 
   return (
-    <AccountContext.Provider value={{ profile, products, loading, hasProduct }}>
+    <AccountContext.Provider value={{ profile, products, loading, hasProduct, refetch }}>
       {children}
     </AccountContext.Provider>
   );

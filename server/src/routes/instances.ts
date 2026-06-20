@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+import { Router, Response } from "express";
 import { supabase } from "../lib/supabase.js";
 import {
   createInstance,
@@ -8,11 +8,19 @@ import {
   getConnectionState,
   setWebhook,
 } from "../lib/evolution.js";
+import { authMiddleware, AuthenticatedRequest } from "../middlewares/auth.js";
 
 const router = Router();
 
-router.get("/:accountId", async (req: Request, res: Response) => {
+// Apply authentication middleware to all routes
+router.use(authMiddleware);
+
+router.get("/:accountId", async (req: AuthenticatedRequest, res: Response) => {
   const { accountId } = req.params;
+
+  if (req.user.id !== accountId) {
+    return res.status(403).json({ error: "Forbidden: Access denied to this account" });
+  }
 
   const { data: instances, error } = await supabase
     .from("evolution_instances")
@@ -37,11 +45,15 @@ router.get("/:accountId", async (req: Request, res: Response) => {
   res.json(enriched);
 });
 
-router.post("/create", async (req: Request, res: Response) => {
+router.post("/create", async (req: AuthenticatedRequest, res: Response) => {
   const { accountId } = req.body;
 
   if (!accountId) {
     return res.status(400).json({ error: "accountId is required" });
+  }
+
+  if (req.user.id !== accountId) {
+    return res.status(403).json({ error: "Forbidden: Cannot create instance for another account" });
   }
 
   const instanceName = `atd_${accountId.replace(/-/g, "").slice(0, 12)}`;
@@ -83,7 +95,7 @@ router.post("/create", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/:instanceId/connect", async (req: Request, res: Response) => {
+router.post("/:instanceId/connect", async (req: AuthenticatedRequest, res: Response) => {
   const { instanceId } = req.params;
 
   const { data: instance, error } = await supabase
@@ -94,6 +106,10 @@ router.post("/:instanceId/connect", async (req: Request, res: Response) => {
 
   if (error || !instance) {
     return res.status(404).json({ error: "Instance not found" });
+  }
+
+  if (instance.account_id !== req.user.id) {
+    return res.status(403).json({ error: "Forbidden: You do not own this instance" });
   }
 
   try {
@@ -134,7 +150,7 @@ router.post("/:instanceId/connect", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/:instanceId/disconnect", async (req: Request, res: Response) => {
+router.post("/:instanceId/disconnect", async (req: AuthenticatedRequest, res: Response) => {
   const { instanceId } = req.params;
 
   const { data: instance, error } = await supabase
@@ -145,6 +161,10 @@ router.post("/:instanceId/disconnect", async (req: Request, res: Response) => {
 
   if (error || !instance) {
     return res.status(404).json({ error: "Instance not found" });
+  }
+
+  if (instance.account_id !== req.user.id) {
+    return res.status(403).json({ error: "Forbidden: You do not own this instance" });
   }
 
   try {
@@ -165,7 +185,7 @@ router.post("/:instanceId/disconnect", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/:instanceId/webhook", async (req: Request, res: Response) => {
+router.post("/:instanceId/webhook", async (req: AuthenticatedRequest, res: Response) => {
   const { instanceId } = req.params;
 
   const { data: instance, error } = await supabase
@@ -176,6 +196,10 @@ router.post("/:instanceId/webhook", async (req: Request, res: Response) => {
 
   if (error || !instance) {
     return res.status(404).json({ error: "Instance not found" });
+  }
+
+  if (instance.account_id !== req.user.id) {
+    return res.status(403).json({ error: "Forbidden: You do not own this instance" });
   }
 
   try {

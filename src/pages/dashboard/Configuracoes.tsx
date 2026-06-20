@@ -47,9 +47,13 @@ export default function Configuracoes() {
   }
 
   async function createInstance(): Promise<string | null> {
+    const { data: { session } } = await supabase.auth.getSession();
     const res = await fetch(`${API_BASE}/instances/create`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session?.access_token || ""}`,
+      },
       body: JSON.stringify({ accountId: profile!.id }),
     });
 
@@ -76,8 +80,12 @@ export default function Configuracoes() {
   const fetchQrCode = useCallback(async (instanceId: string) => {
     setFetchingQr(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch(`${API_BASE}/instances/${instanceId}/connect`, {
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${session?.access_token || ""}`,
+        },
       });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
@@ -105,7 +113,13 @@ export default function Configuracoes() {
   async function handleDisconnect() {
     if (!instance) return;
     try {
-      await fetch(`${API_BASE}/instances/${instance.id}/disconnect`, { method: "POST" });
+      const { data: { session } } = await supabase.auth.getSession();
+      await fetch(`${API_BASE}/instances/${instance.id}/disconnect`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session?.access_token || ""}`,
+        },
+      });
       setInstance({ ...instance, connection_status: "disconnected", qr_code: null });
       setQrCode(null);
     } catch (err) {

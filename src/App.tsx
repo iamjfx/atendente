@@ -6,20 +6,31 @@ import AppLayout from "@/components/AppLayout";
 import Index from "@/pages/Index";
 import Auth from "@/pages/Auth";
 import Upgrade from "@/pages/Upgrade";
+import Onboarding from "@/pages/Onboarding";
 import NotFound from "@/pages/NotFound";
 import Dashboard from "@/pages/dashboard/Dashboard";
 import Agenda from "@/pages/dashboard/Agenda";
 import Conversas from "@/pages/dashboard/Conversas";
 import Configuracoes from "@/pages/dashboard/Configuracoes";
+import { Toaster } from "sonner";
 
 export default function App() {
   return (
     <AuthProvider>
       <AccountProvider>
+        <Toaster richColors position="top-right" />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/upgrade" element={<Upgrade />} />
+          <Route
+            path="/onboarding"
+            element={
+              <ProtectedRoute>
+                <Onboarding />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/admin"
             element={

@@ -79,6 +79,8 @@ export interface Database {
           telefone: string | null;
           logo_url: string | null;
           nome_fantasia: string | null;
+          nome_usuario: string | null;
+          nome_ia: string | null;
           role: string;
           owner_user_id: string | null;
           onboarding_completo: boolean;
@@ -92,6 +94,8 @@ export interface Database {
           telefone?: string | null;
           logo_url?: string | null;
           nome_fantasia?: string | null;
+          nome_usuario?: string | null;
+          nome_ia?: string | null;
           role?: string;
           owner_user_id?: string | null;
           onboarding_completo?: boolean;
@@ -103,6 +107,8 @@ export interface Database {
           telefone?: string | null;
           logo_url?: string | null;
           nome_fantasia?: string | null;
+          nome_usuario?: string | null;
+          nome_ia?: string | null;
           role?: string;
           owner_user_id?: string | null;
           onboarding_completo?: boolean;
