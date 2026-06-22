@@ -148,14 +148,9 @@ const faqs = [
     a: "Com certeza! No menu **Conversas**, ao selecionar um chat, você pode clicar no botão **Pausar IA** no cabeçalho ou simplesmente digitar e enviar uma mensagem manual. O sistema detectará o envio manual e silenciará a IA automaticamente para este contato (mudando para o modo *Suporte Manual*), permitindo que você prossiga a conversa sem que a assistente tente responder. Você pode reativar a IA a qualquer momento clicando em **Ativar IA**.",
   },
   {
-    categoria: "Agendamentos",
-    q: "O que é o Pipeline CRM (Funil de Leads) no Dashboard?",
-    a: "Para usuários exclusivos do Atendente, a tela inicial exibe um **Pipeline CRM (Kanban)**. Ele organiza automaticamente os orçamentos e contatos qualificados pela IA em quatro colunas: *Leads Qualificados*, *Em Negociação*, *Aprovados*, e *Recusados*. Você pode arrastar ou clicar nos botões de ação para mover o status das propostas de forma visual conforme a negociação avança.",
-  },
-  {
     categoria: "Clientes e Conversas",
     q: "Como funciona o pós-venda automático de 24 horas?",
-    a: "Sempre que um orçamento ou proposta comercial for marcado como **Aprovado** (seja no Controle Total ou no funil Kanban do Atendente), o sistema agenda uma mensagem de pós-venda. Após 24 horas da aprovação, a IA envia uma mensagem personalizada agradecendo a confiança e convidando o cliente a avaliar a empresa no Google através de um link configurado no sistema.",
+    a: "Sempre que um orçamento ou proposta comercial for marcado como **Aprovado** no Controle Total, o sistema agenda uma mensagem de pós-venda. Após 24 horas da aprovação, a IA envia uma mensagem personalizada agradecendo a confiança e convidando o cliente a avaliar a empresa no Google através de um link configurado no sistema.",
   },
   {
     categoria: "Configurações e Conta",
