@@ -8,6 +8,7 @@ import {
   Calendar,
   Settings,
   LogOut,
+  LifeBuoy,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,6 +28,7 @@ const allRoutes = [
   { label: "Agenda", icon: Calendar, href: "/agenda", show: true },
   { label: "Conversas", icon: MessageCircle, href: "/conversas", show: true },
   { label: "Configurações", icon: Settings, href: "/configuracoes", show: true },
+  { label: "Suporte", icon: LifeBuoy, href: "/suporte", show: true },
 ];
 
 export default function Sidebar() {

@@ -30,7 +30,7 @@ export default function ProtectedRoute({ children, product }: Props) {
   }
 
   if (product && !hasProduct(product)) {
-    return <Navigate to="/upgrade" replace />;
+    return <Navigate to="/auth" state={{ error: "no_product" }} replace />;
   }
 
   return <>{children}</>;

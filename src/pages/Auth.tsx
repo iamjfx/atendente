@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 
 const Logo = () => (
   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -26,6 +29,7 @@ const Logo = () => (
 export default function Auth() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { signOut } = useAuth();
   const from = (location.state as any)?.from ?? "/admin";
 
   const [tab, setTab] = useState<"login" | "signup">(
@@ -36,6 +40,13 @@ export default function Auth() {
   const [nome, setNome] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if ((location.state as any)?.error === "no_product") {
+      signOut();
+      setError("Assinatura do Atendente inativa. Por favor, entre em contato com o suporte em contato@controletotal.app.");
+    }
+  }, [location.state, signOut]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -55,6 +66,29 @@ export default function Auth() {
     e.preventDefault();
     setBusy(true);
     setError("");
+
+    try {
+      const checkRes = await fetch(`${API_BASE}/auth/check-email?email=${encodeURIComponent(email)}`);
+      if (!checkRes.ok) {
+        throw new Error("Erro ao verificar o e-mail na base de dados.");
+      }
+      const checkData = await checkRes.json();
+      if (checkData.exists) {
+        if (checkData.hasAtendente) {
+          setError("Esta conta já existe. Por favor, acesse a aba 'Entrar' e faça login.");
+          setBusy(false);
+          return;
+        } else {
+          setError(`Olá, ${checkData.nome}! Identificamos seu cadastro no Controle Total. Você está prestes a adicionar o Atendente como um produto adicional à sua conta! Para prosseguir com essa contratação, acesse a aba 'Entrar' e faça login com seus dados atuais.`);
+          setBusy(false);
+          return;
+        }
+      }
+    } catch (err: any) {
+      setError(err.message || "Erro de conexão com o servidor.");
+      setBusy(false);
+      return;
+    }
 
     const { data, error } = await supabase.auth.signUp({
       email,

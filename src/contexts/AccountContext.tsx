@@ -17,6 +17,12 @@ interface AccountContextValue {
     nome_fantasia: string | null;
     logo_url: string | null;
     onboarding_completo: boolean;
+    telefone: string | null;
+    cnpj_cpf: string | null;
+    cidade: string | null;
+    uf: string | null;
+    ramo_atividade: string | null;
+    ramo_outro: string | null;
   } | null;
   products: ProductAccess[];
   loading: boolean;
@@ -40,11 +46,32 @@ export function AccountProvider({ children }: { children: ReactNode }) {
 
   async function load() {
     if (!user) return;
-    const { data: profileData } = await supabase
+    
+    let profileData: any = null;
+
+    const { data: dataWithIa, error: errorWithIa } = await supabase
       .from("profiles")
-      .select("id, nome, nome_usuario, nome_ia, email, nome_fantasia, logo_url, onboarding_completo")
+      .select("id, nome, nome_usuario, nome_ia, email, nome_fantasia, logo_url, onboarding_completo, telefone, cnpj_cpf, cidade, uf, ramo_atividade, ramo_outro")
       .eq("id", user.id)
       .single();
+
+    if (!errorWithIa) {
+      profileData = dataWithIa;
+    } else {
+      // Se falhar porque nome_ia não existe, tenta sem ela
+      const { data: dataWithoutIa, error: errorWithoutIa } = await supabase
+        .from("profiles")
+        .select("id, nome, nome_usuario, email, nome_fantasia, logo_url, onboarding_completo, telefone, cnpj_cpf, cidade, uf, ramo_atividade, ramo_outro")
+        .eq("id", user.id)
+        .single();
+      
+      if (!errorWithoutIa && dataWithoutIa) {
+        profileData = {
+          ...dataWithoutIa,
+          nome_ia: null
+        };
+      }
+    }
 
     const ownerId = profileData?.id ?? user.id;
 
@@ -61,15 +88,28 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       email: user.email,
       nome_fantasia: null,
       logo_url: null,
-      onboarding_completo: false
+      onboarding_completo: false,
+      telefone: null,
+      cnpj_cpf: null,
+      cidade: null,
+      uf: null,
+      ramo_atividade: null,
+      ramo_outro: null
     });
 
     const loaded = productRows?.map(r => ({ slug: r.product_slug, ativo: r.ativo })) ?? [];
 
     const idx = loaded.findIndex(p => p.slug === "atendente");
-    if (idx >= 0) {
-      loaded[idx].ativo = true;
-    } else {
+    if (idx === -1) {
+      try {
+        await supabase.from("account_products").insert({
+          account_id: ownerId,
+          product_slug: "atendente",
+          ativo: true
+        });
+      } catch (err) {
+        console.error("Erro ao registrar produto no banco:", err);
+      }
       loaded.push({ slug: "atendente", ativo: true });
     }
 
@@ -93,7 +133,6 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   };
 
   const hasProduct = (slug: string) => {
-    if (slug === "atendente") return true;
     return products.some(p => p.slug === slug && p.ativo);
   };
 

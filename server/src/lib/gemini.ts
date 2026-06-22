@@ -18,7 +18,7 @@ REGRAS:
 export async function generateResponse(
   messageHistory: { role: "user" | "model"; parts: string }[],
   _userName?: string,
-  audioInline?: { mimeType: string; data: string },
+  mediaInline?: { mimeType: string; data: string },
   assistantName?: string,
   businessName?: string
 ): Promise<string> {
@@ -29,6 +29,7 @@ export async function generateResponse(
 
 REGRAS:
 - Seja educada, profissional e cordial.
+- Se o cliente enviar uma imagem do local/problema, comente brevemente sobre ela e use as informações visuais para ajudar no atendimento (ex: confirmar o tipo de vazamento ou problema elétrico relatado).
 - Se o cliente pedir orçamento, peça o nome, telefone e endereço para contato.
 - Se o cliente perguntar horários, informe que vai verificar e retornar.
 - Se for uma saudação simples, responda cumprimentando e pergunte como pode ajudar.
@@ -55,8 +56,8 @@ REGRAS:
   if (lastMessage.parts) {
     parts.push({ text: lastMessage.parts });
   }
-  if (audioInline) {
-    parts.push({ inlineData: audioInline });
+  if (mediaInline) {
+    parts.push({ inlineData: mediaInline });
   }
 
   const result = await chat.sendMessage(parts);

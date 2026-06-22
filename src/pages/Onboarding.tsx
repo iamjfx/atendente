@@ -41,7 +41,7 @@ function formatPhoneBR(value: string) {
 
 export default function Onboarding() {
   const { signOut } = useAuth();
-  const { profile, refetch } = useAccount();
+  const { profile, refetch, hasProduct } = useAccount();
   const navigate = useNavigate();
 
   // Multi-step logic (Apple style: 5 clear, smaller steps)
@@ -80,7 +80,23 @@ export default function Onboarding() {
     setNomeUsuario(profile.nome_usuario || profile.nome || "");
     setNomeFantasia(profile.nome_fantasia || "");
     setNomeIa(profile.nome_ia || "");
+    setTelefone(profile.telefone || "");
+    setCnpjCpf(profile.cnpj_cpf || "");
+    setCidade(profile.cidade || "");
+    setUf(profile.uf || "");
+    if (profile.ramo_atividade) {
+      setRamoId(profile.ramo_atividade);
+    }
+    if (profile.ramo_outro) {
+      setRamoOutro(profile.ramo_outro);
+    }
   }, [profile]);
+
+  useEffect(() => {
+    if (profile?.onboarding_completo) {
+      navigate("/admin", { replace: true });
+    }
+  }, [profile?.onboarding_completo, navigate]);
 
   const filterRamos = RAMOS.filter((r) =>
     r.label.toLowerCase().includes(buscaRamo.toLowerCase()) ||
@@ -329,6 +345,20 @@ export default function Onboarding() {
           {/* STEP 1: SOBRE VOCÊ */}
           {step === 1 && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-3 duration-300">
+              {hasProduct("controletotal") && (
+                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <Sparkles className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-bold text-amber-800 dark:text-amber-200">
+                      Que bom te ver por aqui também, {profile?.nome_usuario || profile?.nome}! 🌟
+                    </h3>
+                    <p className="text-xs leading-relaxed text-amber-700/80 dark:text-amber-300/80">
+                      Já trouxemos seus dados cadastrais preenchidos do <strong>Controle Total</strong> para facilitar seu onboarding. Por favor, confira se as informações estão corretas.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300">
                   <User className="w-3.5 h-3.5" /> Boas-vindas

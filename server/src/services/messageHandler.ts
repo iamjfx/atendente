@@ -2,6 +2,7 @@ import { supabase } from "../lib/supabase.js";
 import { sendMessage, downloadMedia } from "../lib/evolution.js";
 import { generateResponse } from "../lib/gemini.js";
 import { z } from "zod";
+import { checkAndRegisterLead } from "./leadQualificator.js";
 
 const webhookSchema = z.object({
   event: z.string(),
@@ -16,6 +17,7 @@ const webhookSchema = z.object({
       conversation: z.string().optional(),
       extendedTextMessage: z.object({ text: z.string() }).optional(),
       audioMessage: z.any().optional(),
+      imageMessage: z.any().optional(),
     }).optional(),
     pushName: z.string().optional(),
     messageType: z.string().optional(),
@@ -27,12 +29,12 @@ export type WebhookPayload = z.infer<typeof webhookSchema>;
 async function ensureConversation(instanceId: string, remoteJid: string, accountId: string, pushName?: string) {
   const { data: existing } = await supabase
     .from("conversations")
-    .select("id")
+    .select("id, status")
     .eq("instance_id", instanceId)
     .eq("remote_jid", remoteJid)
     .single();
 
-  if (existing) return existing.id;
+  if (existing) return { id: existing.id, status: existing.status };
 
   const { data: newConv, error } = await supabase
     .from("conversations")
@@ -43,12 +45,12 @@ async function ensureConversation(instanceId: string, remoteJid: string, account
       contact_name: pushName || null,
       contact_phone: remoteJid.replace(/[^0-9]/g, "").slice(0, 11),
     })
-    .select("id")
+    .select("id, status")
     .single();
 
   if (error || !newConv) throw new Error(`Failed to create conversation: ${error?.message}`);
 
-  return newConv.id;
+  return { id: newConv.id, status: newConv.status };
 }
 
 async function storeMessage(
@@ -112,7 +114,7 @@ async function processAudio(
   message: Record<string, unknown>,
   pushName?: string
 ) {
-  const conversationId = await ensureConversation(
+  const { id: conversationId, status } = await ensureConversation(
     instanceRecord.id,
     remoteJid,
     instanceRecord.account_id,
@@ -121,6 +123,11 @@ async function processAudio(
 
   await storeMessage(conversationId, remoteJid, instanceRecord.id, false, "[Áudio]");
   await updateConversationPreview(conversationId, "[Áudio]", false);
+
+  if (status === "archived") {
+    console.log(`Conversa ${conversationId} silenciada para IA (manual/arquivada)`);
+    return { handled: true, responded: false, reason: "manual_mode" };
+  }
 
   let audioInline: { mimeType: string; data: string } | null = null;
   try {
@@ -184,8 +191,106 @@ async function processAudio(
   await sendMessage(instanceRecord.instance_name, remoteJid, aiResponse);
   await updateConversationPreview(conversationId, aiResponse, true);
 
+  const updatedHistory = [...history, { role: "model" as const, parts: aiResponse }];
+  checkAndRegisterLead(conversationId, remoteJid, instanceRecord.account_id, updatedHistory).catch((err) => {
+    console.error("Erro na qualificação assíncrona do áudio:", err);
+  });
+
   console.log(`Resposta IA para áudio enviada para ${remoteJid}: "${aiResponse.slice(0, 60)}..."`);
   return { handled: true, responded: true, type: "audio" };
+}
+
+async function processImage(
+  instanceName: string,
+  instanceRecord: { id: string; account_id: string; instance_name: string; assistantName?: string; businessName?: string },
+  remoteJid: string,
+  message: Record<string, unknown>,
+  pushName?: string
+) {
+  const { id: conversationId, status } = await ensureConversation(
+    instanceRecord.id,
+    remoteJid,
+    instanceRecord.account_id,
+    pushName
+  );
+
+  await storeMessage(conversationId, remoteJid, instanceRecord.id, false, "[Imagem]");
+  await updateConversationPreview(conversationId, "[Imagem]", false);
+
+  if (status === "archived") {
+    console.log(`Conversa ${conversationId} silenciada para IA (manual/arquivada)`);
+    return { handled: true, responded: false, reason: "manual_mode" };
+  }
+
+  let imageInline: { mimeType: string; data: string } | null = null;
+  try {
+    const media = await downloadMedia(instanceName, message);
+    if (media?.data && media?.mimeType) {
+      imageInline = { mimeType: media.mimeType, data: media.data };
+    }
+  } catch (err) {
+    console.error(`Falha ao baixar imagem de ${remoteJid}:`, err);
+  }
+
+  if (!imageInline) {
+    const fallback = "Recebi sua imagem! Infelizmente não consegui visualizá-la no momento. Pode me descrever o problema?";
+
+    await supabase.from("messages").insert({
+      conversation_id: conversationId,
+      remote_jid: remoteJid,
+      instance_id: instanceRecord.id,
+      from_me: true,
+      content: fallback,
+      ai_processed: false,
+    });
+
+    await sendMessage(instanceRecord.instance_name, remoteJid, fallback);
+    await updateConversationPreview(conversationId, fallback, true);
+
+    console.log(`Resposta fallback para imagem enviada para ${remoteJid}`);
+    return { handled: true, responded: true, type: "image_fallback" };
+  }
+
+  const history = await loadHistory(conversationId, instanceName);
+
+  history.push({
+    role: "user",
+    parts: "O cliente enviou uma imagem do local/problema. Analise e responda adequadamente.",
+  });
+
+  console.log(`Processando imagem do Gemini para ${remoteJid}`);
+  const aiResponse = await generateResponse(
+    history,
+    pushName,
+    imageInline,
+    instanceRecord.assistantName,
+    instanceRecord.businessName
+  );
+
+  if (!aiResponse || aiResponse.trim().length === 0) {
+    console.log(`IA retornou resposta vazia para imagem de ${remoteJid}`);
+    return { handled: true, responded: false, reason: "empty_response" };
+  }
+
+  await supabase.from("messages").insert({
+    conversation_id: conversationId,
+    remote_jid: remoteJid,
+    instance_id: instanceRecord.id,
+    from_me: true,
+    content: aiResponse,
+    ai_processed: true,
+  });
+
+  await sendMessage(instanceRecord.instance_name, remoteJid, aiResponse);
+  await updateConversationPreview(conversationId, aiResponse, true);
+
+  const updatedHistory = [...history, { role: "model" as const, parts: aiResponse }];
+  checkAndRegisterLead(conversationId, remoteJid, instanceRecord.account_id, updatedHistory).catch((err) => {
+    console.error("Erro na qualificação assíncrona da imagem:", err);
+  });
+
+  console.log(`Resposta IA para imagem enviada para ${remoteJid}: "${aiResponse.slice(0, 60)}..."`);
+  return { handled: true, responded: true, type: "image" };
 }
 
 async function processText(
@@ -195,7 +300,7 @@ async function processText(
   content: string,
   pushName?: string
 ) {
-  const conversationId = await ensureConversation(
+  const { id: conversationId, status } = await ensureConversation(
     instanceRecord.id,
     remoteJid,
     instanceRecord.account_id,
@@ -204,6 +309,11 @@ async function processText(
 
   await storeMessage(conversationId, remoteJid, instanceRecord.id, false, content);
   await updateConversationPreview(conversationId, content, false);
+
+  if (status === "archived") {
+    console.log(`Conversa ${conversationId} silenciada para IA (manual/arquivada)`);
+    return { handled: true, responded: false, reason: "manual_mode" };
+  }
 
   const history = await loadHistory(conversationId, instanceName);
   history.push({ role: "user", parts: content });
@@ -233,6 +343,11 @@ async function processText(
 
   await sendMessage(instanceRecord.instance_name, remoteJid, aiResponse);
   await updateConversationPreview(conversationId, aiResponse, true);
+
+  const updatedHistory = [...history, { role: "model" as const, parts: aiResponse }];
+  checkAndRegisterLead(conversationId, remoteJid, instanceRecord.account_id, updatedHistory).catch((err) => {
+    console.error("Erro na qualificação assíncrona do texto:", err);
+  });
 
   console.log(`Resposta enviada para ${remoteJid}: "${aiResponse.slice(0, 60)}..."`);
   return { handled: true, responded: true };
@@ -266,6 +381,7 @@ export async function handleIncomingMessage(payload: unknown) {
   }
 
   const isAudio = !!data.message?.audioMessage;
+  const isImage = !!data.message?.imageMessage;
 
   const { data: profileRecord } = await supabase
     .from("profiles")
@@ -281,6 +397,16 @@ export async function handleIncomingMessage(payload: unknown) {
 
   if (isAudio) {
     return processAudio(
+      instance,
+      instanceWithProfile,
+      remoteJid,
+      { key: data.key, message: data.message },
+      data.pushName
+    );
+  }
+
+  if (isImage) {
+    return processImage(
       instance,
       instanceWithProfile,
       remoteJid,

@@ -22,11 +22,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const checkTokenAndSession = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get("token");
+      if (token) {
+        try {
+          await supabase.auth.setSession({ access_token: token, refresh_token: "" });
+          // Limpa token da URL para manter limpo
+          const url = new URL(window.location.href);
+          url.searchParams.delete("token");
+          window.history.replaceState({}, document.title, url.pathname + url.search);
+        } catch (err) {
+          console.error("Erro ao definir sessao via SSO:", err);
+        }
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
-    });
+    };
+
+    void checkTokenAndSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);

@@ -5,13 +5,13 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayout from "@/components/AppLayout";
 import Index from "@/pages/Index";
 import Auth from "@/pages/Auth";
-import Upgrade from "@/pages/Upgrade";
 import Onboarding from "@/pages/Onboarding";
 import NotFound from "@/pages/NotFound";
 import Dashboard from "@/pages/dashboard/Dashboard";
 import Agenda from "@/pages/dashboard/Agenda";
 import Conversas from "@/pages/dashboard/Conversas";
 import Configuracoes from "@/pages/dashboard/Configuracoes";
+import Suporte from "@/pages/dashboard/Suporte";
 import { Toaster } from "sonner";
 
 export default function App() {
@@ -22,7 +22,6 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/upgrade" element={<Upgrade />} />
           <Route
             path="/onboarding"
             element={
@@ -60,6 +59,14 @@ export default function App() {
             element={
               <ProtectedRoute product="atendente">
                 <AppLayout><Configuracoes /></AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/suporte"
+            element={
+              <ProtectedRoute product="atendente">
+                <AppLayout><Suporte /></AppLayout>
               </ProtectedRoute>
             }
           />
