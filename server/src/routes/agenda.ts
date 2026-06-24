@@ -56,8 +56,22 @@ router.get("/disponibilidade", async (req: AuthenticatedRequest, res: Response) 
   const abreMin = abreH * 60 + abreM;
   const fechaMin = fechaH * 60 + fechaM;
 
+  // Carrega deslocamento_minutos da config
+  const { data: iaCfg } = await db
+    .from("ia_configs")
+    .select("deslocamento_minutos")
+    .eq("account_id", account_id)
+    .maybeSingle();
+  const deslocamentoMin = iaCfg?.deslocamento_minutos ?? 30;
+
+  // Define duração do slot: maior serviço + deslocamento, mínimo 60min
+  const maxDuracao = Math.max(
+    ...(servicos || []).map((s: any) => s.duracao_minutos || 60),
+    60
+  );
+  const slotDuration = maxDuracao + deslocamentoMin;
+
   const slots: string[] = [];
-  const slotDuration = 60;
   for (let start = abreMin; start + slotDuration <= fechaMin; start += slotDuration) {
     const h = Math.floor(start / 60);
     const m = start % 60;
@@ -82,6 +96,8 @@ router.get("/disponibilidade", async (req: AuthenticatedRequest, res: Response) 
     servicos: servicos || [],
     data: dataStr,
     dia_semana: diaSemana,
+    deslocamento_minutos: deslocamentoMin,
+    duracao_slot: slotDuration,
   });
 });
 

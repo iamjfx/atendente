@@ -34,6 +34,10 @@ router.get("/status", async (req: AuthenticatedRequest, res: Response) => {
       .eq("status", "active"),
   ]);
 
+  const convData = convResult?.data || [];
+  const aptData = aptResult?.data || [];
+  const pendentesData = pendentesResult?.data || [];
+
   const { data: totalConv } = await db
     .from("conversations")
     .select("id")
@@ -67,9 +71,9 @@ router.get("/status", async (req: AuthenticatedRequest, res: Response) => {
     totalMessages = (allResult?.data || []).length;
   }
 
-  const conversasHoje = convResult?.length || 0;
-  const agendamentosHoje = aptResult || [];
-  const pendentes = (pendentesResult || [])
+  const conversasHoje = convData.length;
+  const agendamentosHoje = aptData;
+  const pendentes = pendentesData
     .filter((c: any) => {
       if (!c.last_message_at) return true;
       const horas = (Date.now() - new Date(c.last_message_at).getTime()) / (1000 * 60 * 60);

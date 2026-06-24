@@ -255,6 +255,22 @@ export const db = {
       }
     },
 
+    async setSession({ access_token, refresh_token }: any) {
+      if (access_token) {
+        localStorage.setItem('auth_token', access_token);
+        const base64Url = access_token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map((c) => {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        const user = JSON.parse(jsonPayload);
+        const session = { access_token, user, refresh_token };
+        triggerAuthStateChange('SIGNED_IN', session);
+        return { data: { session }, error: null };
+      }
+      return { data: { session: null }, error: null };
+    },
+
     async signOut() {
       localStorage.removeItem('auth_token');
       triggerAuthStateChange('SIGNED_OUT', null);

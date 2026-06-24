@@ -73,15 +73,16 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    const ownerId = profileData?.id ?? user.id;
+    const ownerId = profileData?.id ?? user.sub ?? user.id;
 
     const { data: productRows } = await db
       .from("account_products")
       .select("product_slug, ativo")
       .eq("account_id", ownerId);
 
+    const fallbackId = user.sub ?? user.id;
     setProfile(profileData ?? {
-      id: user.id,
+      id: fallbackId,
       nome: user.email ?? "",
       nome_usuario: null,
       nome_ia: null,

@@ -12,6 +12,7 @@ export interface IaConfig {
   custom_instructions: string | null;
   greeting_message: string | null;
   closing_message: string | null;
+  deslocamento_minutos: number;
 }
 
 export interface BusinessHours {
@@ -52,6 +53,7 @@ function buildSystemPrompt(
     custom_instructions: null,
     greeting_message: null,
     closing_message: null,
+    deslocamento_minutos: 30,
   };
 
   let prompt = `Você é ${nameIa}, a recepcionista virtual de ${empresa}.`;
@@ -125,10 +127,11 @@ function buildSystemPrompt(
       if (schedulingEnabled) {
         prompt += `
 - Quando for sugerir um agendamento, ofereça SEMPRE 2 ou 3 opções de horário com base nos horários de funcionamento acima. Exemplo: "Tenho disponibilidade amanhã às 9h, 10h ou 14h. Qual é melhor?"
+- O tempo de deslocamento até o cliente é de ${cfg.deslocamento_minutos} minutos. Considere isso ao sugerir horários.
 - Quando o cliente CONFIRMAR um dos horários, inclua no final da resposta uma linha com:
-📅 AGENDAR|servico|data|horario
-Substitua servico, data (YYYY-MM-DD) e horario (HH:MM) pelos valores combinados.
-Exemplo: "📅 AGENDAR|Corte de cabelo|2026-06-25|14:30"
+📅 AGENDAR|servico|data|horario|deslocamento_minutos
+Substitua servico, data (YYYY-MM-DD), horario (HH:MM) e deslocamento_minutos (opcional, padrão ${cfg.deslocamento_minutos}) pelos valores combinados.
+Exemplo: "📅 AGENDAR|Corte de cabelo|2026-06-25|14:30|30"
 Se o serviço não estiver na lista acima, use "consulta" como serviço.
 A data deve ser o dia da semana que combinarem, no formato YYYY-MM-DD.`;
 

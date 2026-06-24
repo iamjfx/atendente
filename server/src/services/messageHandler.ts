@@ -191,7 +191,7 @@ async function sendAndStore(
   await updateConversationPreview(conversationId, text, true);
 }
 
-const AGENDAR_REGEX = /📅\s*AGENDAR\|\s*([^|]+)\s*\|\s*(\d{4}-\d{2}-\d{2})\s*\|\s*(\d{2}:\d{2})/;
+const AGENDAR_REGEX = /📅\s*AGENDAR\|\s*([^|]+)\s*\|\s*(\d{4}-\d{2}-\d{2})\s*\|\s*(\d{2}:\d{2})(?:\|\s*(\d+))?/;
 const CANCELAR_REGEX = /📅\s*CANCELAR\|\s*(.+)/;
 const REAGENDAR_REGEX = /📅\s*REAGENDAR\|\s*(\d{4}-\d{2}-\d{2})\s*\|\s*(\d{2}:\d{2})/;
 const ALL_MARKERS = /📅\s*(?:AGENDAR|CANCELAR|REAGENDAR)\|.*/g;
@@ -209,11 +209,35 @@ async function tryCriarAgendamento(
   const servico = match[1].trim();
   const data = match[2];
   const horaInicio = match[3];
+  const deslocamentoMin = match[4] ? parseInt(match[4]) : null;
 
   const phoneStr = remoteJid.replace(/[^0-9]/g, "").slice(0, 11);
 
+  // Carrega deslocamento_minutos da config (ou default 30)
+  let deslocamento = deslocamentoMin ?? 30;
+  if (!deslocamentoMin) {
+    const { data: cfg } = await db
+      .from("ia_configs")
+      .select("deslocamento_minutos")
+      .eq("account_id", instanceRecord.account_id)
+      .maybeSingle();
+    deslocamento = cfg?.deslocamento_minutos ?? 30;
+  }
+
+  // Busca duração do serviço no catálogo
+  const { data: servicoInfo } = await db
+    .from("servicos_catalogo")
+    .select("duracao_minutos")
+    .eq("user_id", instanceRecord.account_id)
+    .eq("nome", servico)
+    .maybeSingle();
+
+  const duracaoMin = servicoInfo?.duracao_minutos || 60;
+
+  // Calcula hora_fim = hora_inicio + duracao do serviço
   const [h, m] = horaInicio.split(":").map(Number);
-  const horaFim = `${String(h + 1).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  const totalMin = h * 60 + m + duracaoMin;
+  const horaFim = `${String(Math.floor(totalMin / 60) % 24).padStart(2, "0")}:${String(totalMin % 60).padStart(2, "0")}`;
 
   const { data: existingClient } = await db
     .from("clientes")
@@ -248,6 +272,7 @@ async function tryCriarAgendamento(
       hora_fim: horaFim,
       servico,
       status: "confirmed",
+      observacoes: deslocamento ? `Deslocamento: ${deslocamento} min` : null,
     })
     .select()
     .single();
@@ -257,8 +282,8 @@ async function tryCriarAgendamento(
     return null;
   }
 
-  console.log(`✅ Agendamento automático criado para ${pushName || phoneStr}: ${servico} em ${data} às ${horaInicio}`);
-  return novo;
+  console.log(`✅ Agendamento automático criado para ${pushName || phoneStr}: ${servico} em ${data} às ${horaInicio} (deslocamento: ${deslocamento}min, duração: ${duracaoMin}min)`);
+  return { ...novo, deslocamento_minutos: deslocamento };
 }
 
 async function tryCancelarAgendamento(
@@ -348,6 +373,46 @@ async function tryReagendarAgendamento(
 
   console.log(`🔄 Agendamento reagendado: ${agenda.servico} de ${agenda.data} ${agenda.hora_inicio} → ${novaData} ${novoHorario}`);
   return { ...agenda, nova_data: novaData, novo_horario: novoHorario };
+}
+
+async function notificarDono(
+  instanceRecord: { id: string; account_id: string; instance_name: string },
+  agendamento: { servico: string; data: string; hora_inicio: string; deslocamento_minutos?: number },
+  remoteJid: string,
+  pushName?: string
+) {
+  try {
+    const { data: profile } = await db
+      .from("profiles")
+      .select("telefone, nome_fantasia")
+      .eq("id", instanceRecord.account_id)
+      .maybeSingle();
+
+    const donoTelefone = profile?.telefone;
+    if (!donoTelefone) return;
+
+    const clienteNome = pushName || remoteJid.replace(/[^0-9]/g, "").slice(0, 11);
+    const empresa = profile?.nome_fantasia || "Controle Total";
+
+    const desloc = agendamento.deslocamento_minutos || 30;
+    const [h, m] = agendamento.hora_inicio.split(":").map(Number);
+    const saidaMin = h * 60 + m - desloc;
+    const saidaStr = `${String(Math.floor(saidaMin / 60) % 24).padStart(2, "0")}:${String(saidaMin % 60).padStart(2, "0")}`;
+
+    const msg = `📅 *Novo agendamento* - ${empresa}\n\n` +
+      `Cliente: ${clienteNome}\n` +
+      `Serviço: ${agendamento.servico}\n` +
+      `Data: ${agendamento.data}\n` +
+      `Horário: ${agendamento.hora_inicio}\n` +
+      `Deslocamento: ${desloc} min\n` +
+      `Saída prevista: ${saidaStr}`;
+
+    const donoJid = `${donoTelefone}@s.whatsapp.net`;
+    await sendMessage(instanceRecord.instance_name, donoJid, msg);
+    console.log(`📩 Notificação de agendamento enviada para ${donoTelefone}`);
+  } catch (err) {
+    console.error(`Erro ao notificar dono sobre agendamento:`, err);
+  }
 }
 
 async function checkRecurringClient(
@@ -446,6 +511,7 @@ async function processWithAi(
   if (agendamento) {
     const confirmacao = `✅ Agendamento confirmado! ${agendamento.servico} em ${agendamento.data} às ${agendamento.hora_inicio}.`;
     await sendAndStore(instanceRecord, remoteJid, conversationId, confirmacao, true);
+    notificarDono(instanceRecord, agendamento, remoteJid, pushName);
   }
 
   const cancelamento = await tryCancelarAgendamento(aiResponse, instanceRecord, conversationId, remoteJid, pushName);

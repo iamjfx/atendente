@@ -11,6 +11,7 @@ import {
   Users,
   ArrowRight,
   CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
@@ -42,6 +43,7 @@ export default function Dashboard() {
   const [status, setStatus] = useState<DashboardStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [connected, setConnected] = useState(false);
+  const [apiError, setApiError] = useState(false);
   const mountedRef = useRef(true);
 
   const greeting = (() => {
@@ -69,21 +71,42 @@ export default function Dashboard() {
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+
       const [statusRes, instRes] = await Promise.all([
-        fetch(`${API}/dashboard/status`, { headers }).catch(() => null),
-        fetch(`${API}/instances/${profile!.id}`, { headers }).catch(() => null),
+        fetch(`${API}/dashboard/status`, { headers, signal: controller.signal }).catch(() => null),
+        fetch(`${API}/instances/${profile!.id}`, { headers, signal: controller.signal }).catch(() => null),
       ]);
+
+      clearTimeout(timeout);
 
       if (!mountedRef.current) return;
 
-      if (statusRes?.ok) setStatus(await statusRes.json());
+      const apiOk = statusRes?.ok || instRes?.ok;
 
-      const instances = instRes ? await instRes.json().catch(() => []) : [];
-      setConnected(
-        Array.isArray(instances)
+      if (statusRes?.ok) {
+        const data = await statusRes.json();
+        setStatus(data);
+        sessionStorage.setItem("dashboard:status", JSON.stringify(data));
+      } else {
+        const cached = sessionStorage.getItem("dashboard:status");
+        if (cached) setStatus(JSON.parse(cached));
+      }
+
+      if (instRes?.ok) {
+        const instances = await instRes.json().catch(() => []);
+        const conectado = Array.isArray(instances)
           ? instances.some((i: any) => i.connection_status === "connected" || i.connection_state === "open")
-          : false
-      );
+          : false;
+        setConnected(conectado);
+        sessionStorage.setItem("dashboard:connected", String(conectado));
+      } else {
+        const cached = sessionStorage.getItem("dashboard:connected");
+        if (cached) setConnected(cached === "true");
+      }
+
+      setApiError(!apiOk && !sessionStorage.getItem("dashboard:connected"));
     } finally {
       if (mountedRef.current) setLoading(false);
     }
@@ -104,12 +127,20 @@ export default function Dashboard() {
 
   const proximosPassos: { icon: typeof Wifi; title: string; desc: string; action?: string; route?: string }[] = [];
 
-  if (!connected) {
+  if (!connected && !apiError) {
     proximosPassos.push({
       icon: Wifi,
       title: "Conectar WhatsApp",
       desc: "Conecte seu WhatsApp para começar a receber mensagens.",
       route: "/configuracoes",
+    });
+  }
+
+  if (apiError) {
+    proximosPassos.push({
+      icon: AlertCircle,
+      title: "Verificar conexão",
+      desc: "Não foi possível verificar o status do sistema. Tente recarregar.",
     });
   }
 
@@ -220,7 +251,9 @@ export default function Dashboard() {
             <CardTitle className="text-xs font-medium text-muted-foreground">
               WhatsApp
             </CardTitle>
-            {connected ? (
+            {apiError ? (
+              <AlertCircle className="w-4 h-4 text-amber-500" />
+            ) : connected ? (
               <Wifi className="w-4 h-4 text-green-500" />
             ) : (
               <WifiOff className="w-4 h-4 text-muted-foreground" />
@@ -228,9 +261,13 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold flex items-center gap-2">
-              <span className={connected ? "text-green-500" : "text-muted-foreground"}>
-                {connected ? "Conectado" : "Desconectado"}
-              </span>
+              {apiError ? (
+                <span className="text-amber-500 text-sm font-normal">Indisponível</span>
+              ) : connected ? (
+                <span className="text-green-500">Conectado</span>
+              ) : (
+                <span className="text-muted-foreground">Desconectado</span>
+              )}
             </div>
           </CardContent>
         </Card>

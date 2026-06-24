@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Wifi, WifiOff, Loader2, Smartphone, X, RefreshCw, Sparkles, User, XCircle, ChevronRight, ArrowLeft, Bot } from "lucide-react";
+import { Wifi, WifiOff, Loader2, Smartphone, X, RefreshCw, Sparkles, User, XCircle, ChevronRight, ArrowLeft, Bot, Clock, Wrench, Plus, Trash2, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAccount } from "@/contexts/AccountContext";
@@ -33,6 +33,15 @@ interface IaConfig {
   custom_instructions: string | null;
   greeting_message: string | null;
   closing_message: string | null;
+  deslocamento_minutos: number;
+}
+
+interface Servico {
+  id?: string;
+  nome: string;
+  duracao_minutos: number | null;
+  valor_padrao: number | null;
+  ativo: boolean;
 }
 
 interface SettingsNavItem {
@@ -49,6 +58,7 @@ const NAV_ITEMS: SettingsNavItem[] = [
   { value: "cadastro", label: "Dados Cadastrais", description: "Seus dados e perfil da IA", icon: User, group: "Conta" },
   { value: "comportamento", label: "Comportamento da IA", description: "Autonomia, triagem e instruções", icon: Bot, group: "Conta" },
   { value: "horarios", label: "Horários de Funcionamento", description: "Dias e horários de atendimento", icon: Clock, group: "Conta" },
+  { value: "servicos", label: "Serviços", description: "Catálogo de serviços oferecidos", icon: Wrench, group: "Conta" },
   { value: "assinatura", label: "Assinatura", description: "Gerenciamento do plano", icon: XCircle, group: "Conta" },
 ];
 
@@ -108,6 +118,7 @@ export default function Configuracoes() {
   const [customInstructions, setCustomInstructions] = useState("");
   const [greetingMessage, setGreetingMessage] = useState("");
   const [closingMessage, setClosingMessage] = useState("");
+  const [deslocamentoMinutos, setDeslocamentoMinutos] = useState(30);
   const [savingIaConfig, setSavingIaConfig] = useState(false);
   const [loadingIaConfig, setLoadingIaConfig] = useState(true);
 
@@ -117,6 +128,13 @@ export default function Configuracoes() {
   );
   const [savingHours, setSavingHours] = useState(false);
   const [loadingHours, setLoadingHours] = useState(true);
+
+  // Estados do Catálogo de Serviços
+  const [servicos, setServicos] = useState<Servico[]>([]);
+  const [loadingServicos, setLoadingServicos] = useState(true);
+  const [savingServico, setSavingServico] = useState(false);
+  const [editServico, setEditServico] = useState<Servico | null>(null);
+  const [showServicoForm, setShowServicoForm] = useState(false);
 
   useEffect(() => {
     if (!profile) return;
@@ -148,6 +166,7 @@ export default function Configuracoes() {
           setCustomInstructions(data.custom_instructions || "");
           setGreetingMessage(data.greeting_message || "");
           setClosingMessage(data.closing_message || "");
+          setDeslocamentoMinutos(data.deslocamento_minutos ?? 30);
         }
         setLoadingIaConfig(false);
       });
@@ -219,6 +238,7 @@ export default function Configuracoes() {
         custom_instructions: customInstructions || null,
         greeting_message: greetingMessage || null,
         closing_message: closingMessage || null,
+        deslocamento_minutos: deslocamentoMinutos,
       };
 
       const { data: existing } = await db
@@ -264,6 +284,62 @@ export default function Configuracoes() {
       toast.error(err.message || "Erro ao salvar horários.");
     } finally {
       setSavingHours(false);
+    }
+  }
+
+  // Carrega catálogo de serviços
+  useEffect(() => {
+    if (!profile?.id) return;
+    setLoadingServicos(true);
+    db.from("servicos_catalogo")
+      .select("id, nome, duracao_minutos, valor_padrao, ativo")
+      .eq("user_id", profile.id)
+      .order("nome", { ascending: true })
+      .then(({ data, error }: any) => {
+        if (data) setServicos(data);
+        setLoadingServicos(false);
+      });
+  }, [profile?.id]);
+
+  async function handleSaveServico() {
+    if (!profile?.id || !editServico?.nome.trim()) return;
+    setSavingServico(true);
+    try {
+      const payload = {
+        user_id: profile.id,
+        nome: editServico.nome.trim(),
+        duracao_minutos: editServico.duracao_minutos || null,
+        valor_padrao: editServico.valor_padrao || null,
+        ativo: editServico.ativo,
+      };
+
+      if (editServico.id) {
+        await db.from("servicos_catalogo").update(payload).eq("id", editServico.id);
+      } else {
+        await db.from("servicos_catalogo").insert(payload);
+      }
+
+      setShowServicoForm(false);
+      setEditServico(null);
+      // Recarrega lista
+      const { data } = await db.from("servicos_catalogo").select("id, nome, duracao_minutos, valor_padrao, ativo").eq("user_id", profile.id).order("nome", { ascending: true });
+      if (data) setServicos(data);
+      toast.success(editServico.id ? "Serviço atualizado!" : "Serviço adicionado!");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao salvar serviço.");
+    } finally {
+      setSavingServico(false);
+    }
+  }
+
+  async function handleDeleteServico(id: string) {
+    if (!confirm("Excluir este serviço?")) return;
+    try {
+      await db.from("servicos_catalogo").delete().eq("id", id);
+      setServicos((prev) => prev.filter((s) => s.id !== id));
+      toast.success("Serviço excluído.");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao excluir serviço.");
     }
   }
 
@@ -865,6 +941,25 @@ export default function Configuracoes() {
                           </div>
                         </div>
 
+                        <Separator />
+
+                        {/* Deslocamento */}
+                        <div className="space-y-2">
+                          <Label htmlFor="deslocamento" className="text-sm font-semibold">Tempo de Deslocamento (minutos)</Label>
+                          <p className="text-xs text-muted-foreground">
+                            Tempo médio que o profissional leva para chegar até o cliente. Usado para calcular a disponibilidade na agenda.
+                          </p>
+                          <Input
+                            id="deslocamento"
+                            type="number"
+                            min={0}
+                            step={5}
+                            value={deslocamentoMinutos}
+                            onChange={(e) => setDeslocamentoMinutos(Number(e.target.value))}
+                            className="w-32"
+                          />
+                        </div>
+
                         <Button
                           className="w-full"
                           onClick={handleSaveIaConfig}
@@ -948,6 +1043,136 @@ export default function Configuracoes() {
                           {savingHours && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                           Salvar Horários
                         </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {activeTab === "servicos" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Wrench className="w-4 h-4 text-primary" />
+                      Serviços
+                    </CardTitle>
+                    <CardDescription>
+                      Cadastre os serviços que sua empresa oferece. A IA usará essa lista para sugerir agendamentos aos clientes.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {loadingServicos ? (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground py-8">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Carregando serviços...
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {servicos.length === 0 && !showServicoForm && (
+                          <p className="text-sm text-muted-foreground text-center py-4">
+                            Nenhum serviço cadastrado ainda.
+                          </p>
+                        )}
+
+                        {servicos.map((s) => (
+                          <div key={s.id} className="flex items-center justify-between gap-3 p-3 rounded-lg bg-muted/50">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{s.nome}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {s.duracao_minutos ? `${s.duracao_minutos} min` : "Duração não definida"}
+                                {s.valor_padrao != null && ` · R$ ${Number(s.valor_padrao).toFixed(2)}`}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <Switch
+                                checked={s.ativo ?? true}
+                                onCheckedChange={async (v) => {
+                                  await db.from("servicos_catalogo").update({ ativo: v }).eq("id", s.id);
+                                  setServicos((prev) => prev.map((x) => (x.id === s.id ? { ...x, ativo: v } : x)));
+                                }}
+                              />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => {
+                                  setEditServico({ ...s });
+                                  setShowServicoForm(true);
+                                }}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive"
+                                onClick={() => s.id && handleDeleteServico(s.id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+
+                        {showServicoForm && (
+                          <div className="space-y-4 p-4 border rounded-lg bg-background">
+                            <div className="space-y-2">
+                              <Label>Nome do Serviço</Label>
+                              <Input
+                                value={editServico?.nome || ""}
+                                onChange={(e) => setEditServico((prev) => ({ ...prev!, nome: e.target.value, ativo: prev?.ativo ?? true }))}
+                                placeholder="Ex: Instalação de fechadura smart"
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label>Duração (minutos)</Label>
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  step={5}
+                                  value={editServico?.duracao_minutos ?? ""}
+                                  onChange={(e) => setEditServico((prev) => ({ ...prev!, duracao_minutos: e.target.value ? Number(e.target.value) : null }))}
+                                  placeholder="60"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Preço (R$)</Label>
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  step={0.01}
+                                  value={editServico?.valor_padrao ?? ""}
+                                  onChange={(e) => setEditServico((prev) => ({ ...prev!, valor_padrao: e.target.value ? Number(e.target.value) : null }))}
+                                  placeholder="0,00"
+                                />
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button onClick={handleSaveServico} disabled={savingServico || !editServico?.nome.trim()}>
+                                {savingServico && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                                {editServico?.id ? "Atualizar" : "Adicionar"}
+                              </Button>
+                              <Button variant="outline" onClick={() => { setShowServicoForm(false); setEditServico(null); }}>
+                                Cancelar
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {!showServicoForm && (
+                          <Button
+                            className="w-full"
+                            variant="outline"
+                            onClick={() => {
+                              setEditServico({ nome: "", duracao_minutos: null, valor_padrao: null, ativo: true });
+                              setShowServicoForm(true);
+                            }}
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Adicionar Serviço
+                          </Button>
+                        )}
                       </div>
                     )}
                   </CardContent>

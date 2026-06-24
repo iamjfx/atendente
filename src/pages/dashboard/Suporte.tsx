@@ -58,6 +58,17 @@ const modulos: Modulo[] = [
     ],
   },
   {
+    icon: Settings,
+    title: "Serviços e Catálogo",
+    href: "/configuracoes",
+    desc: "Gerencie os serviços oferecidos e o tempo de deslocamento.",
+    bullets: [
+      "Cadastro simples de serviços com nome, duração e preço.",
+      "Toggle para ativar/desativar serviços individualmente.",
+      "Tempo de deslocamento considerado nos agendamentos.",
+    ],
+  },
+  {
     icon: Calendar,
     title: "Agenda e Horários",
     href: "/agenda",
@@ -166,7 +177,27 @@ const faqs = [
     categoria: "Configurações e Conta",
     q: "Os dados e conversas com meus clientes são seguros e protegidos pela LGPD?",
     a: "Absolutamente. O Atendente está em conformidade com as diretrizes da LGPD. Todas as conversas são processadas temporariamente em memória para gerar as respostas inteligentes, sem armazenamento definitivo de dados sensíveis ou mídias em nossos servidores, garantindo privacidade completa para você e seus clientes.",
-  }
+  },
+  {
+    categoria: "Configurações e Conta",
+    q: "Como cadastrar os serviços que minha empresa oferece?",
+    a: "Vá em **Configurações > Serviços**. Clique em **Adicionar Serviço** e preencha o nome, a duração aproximada (em minutos) e o preço (opcional). A IA usará essa lista automaticamente para sugerir agendamentos aos clientes. Os serviços podem ser ativados/desativados individualmente com o toggle ao lado de cada um.",
+  },
+  {
+    categoria: "Agendamentos",
+    q: "A IA considera o tempo de deslocamento até o cliente ao sugerir horários?",
+    a: "Sim! Em **Configurações > Comportamento da IA**, você define o **Tempo de Deslocamento (minutos)** — o tempo médio que o profissional leva para chegar até o cliente. A IA considera esse tempo ao sugerir horários de visita. Quando um agendamento é criado, a notificação enviada para você inclui o deslocamento e a previsão de saída do profissional.",
+  },
+  {
+    categoria: "Agendamentos",
+    q: "Como a IA calcula a duração do agendamento?",
+    a: "A IA usa a **duração** cadastrada no catálogo de serviços (em **Configurações > Serviços**). Se um serviço tem duração de 90 minutos, o horário final do agendamento será calculado como hora_inicio + 90min. Antes os agendamentos tinham duração fixa de 1h — agora a duração é dinâmica de acordo com cada serviço.",
+  },
+  {
+    categoria: "Configurações e Conta",
+    q: "Como configurar os horários de funcionamento da minha empresa?",
+    a: "Vá em **Configurações > Horários de Funcionamento**. Você pode ativar/desativar cada dia da semana e definir os horários de abertura e fechamento. A IA usa essas informações para saber quando sugerir agendamentos aos clientes.",
+  },
 ];
 
 // Helper to render bold/italic text
