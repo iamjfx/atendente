@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/db/client";
 import type { Appointment } from "@/types/appointment";
 
 const ROW_MAPPING = {
@@ -50,7 +50,7 @@ export function useAgendamentos() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("agendamentos")
       .select("*")
       .order("data", { ascending: true })
@@ -72,7 +72,7 @@ export function useAgendamentos() {
     const isNew = !apt.id;
 
     if (isNew) {
-      const { data: user } = await supabase.auth.getUser();
+      const { data: user } = await db.auth.getUser();
       if (!user.user) throw new Error("Usuário não autenticado");
 
       const payload = {
@@ -91,7 +91,7 @@ export function useAgendamentos() {
         tipo: apt.tipo || "agendado",
       };
 
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("agendamentos")
         .insert(payload)
         .select()
@@ -102,7 +102,7 @@ export function useAgendamentos() {
         setAppointments((prev) => [...prev, rowToAppointment(data)].sort(sortAppointments));
       }
     } else {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("agendamentos")
         .update({
           cliente_nome: apt.cliente_nome,
@@ -132,13 +132,13 @@ export function useAgendamentos() {
   };
 
   const remove = async (id: string) => {
-    const { error } = await supabase.from("agendamentos").delete().eq("id", id);
+    const { error } = await db.from("agendamentos").delete().eq("id", id);
     if (error) throw error;
     setAppointments((prev) => prev.filter((a) => a.id !== id));
   };
 
   const setStatus = async (id: string, status: Appointment["status"]) => {
-    const { error } = await supabase
+    const { error } = await db
       .from("agendamentos")
       .update({ status })
       .eq("id", id);

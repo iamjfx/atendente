@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/db/client";
 
 interface User {
   id: string;
@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const token = params.get("token");
       if (token) {
         try {
-          await supabase.auth.setSession({ access_token: token, refresh_token: "" });
+          await db.auth.setSession({ access_token: token, refresh_token: "" });
           // Limpa token da URL para manter limpo
           const url = new URL(window.location.href);
           url.searchParams.delete("token");
@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await db.auth.getSession();
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     void checkTokenAndSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = db.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
     });
@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await db.auth.signOut();
   };
 
   return (

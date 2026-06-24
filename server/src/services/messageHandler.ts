@@ -1,6 +1,7 @@
-import { supabase } from "../lib/supabase.js";
+import { db } from "../lib/db.js";
 import { sendMessage, downloadMedia } from "../lib/evolution.js";
-import { generateResponse } from "../lib/gemini.js";
+import { generateResponse, IaConfig, BusinessHours, ServicoCatalogo, ProductTier } from "../lib/gemini.js";
+import { getAccountProductSlugs, getProductTier } from "../lib/products.js";
 import { z } from "zod";
 import { checkAndRegisterLead } from "./leadQualificator.js";
 
@@ -26,8 +27,10 @@ const webhookSchema = z.object({
 
 export type WebhookPayload = z.infer<typeof webhookSchema>;
 
+const FALLBACK_RESPONSE = "Poxa, tive uma instabilidade aqui! Pode me explicar de novo o que precisa? 😊";
+
 async function ensureConversation(instanceId: string, remoteJid: string, accountId: string, pushName?: string) {
-  const { data: existing } = await supabase
+  const { data: existing } = await db
     .from("conversations")
     .select("id, status")
     .eq("instance_id", instanceId)
@@ -36,7 +39,7 @@ async function ensureConversation(instanceId: string, remoteJid: string, account
 
   if (existing) return { id: existing.id, status: existing.status };
 
-  const { data: newConv, error } = await supabase
+  const { data: newConv, error } = await db
     .from("conversations")
     .insert({
       account_id: accountId,
@@ -60,7 +63,7 @@ async function storeMessage(
   fromMe: boolean,
   content: string
 ) {
-  const { error } = await supabase.from("messages").insert({
+  const { error } = await db.from("messages").insert({
     conversation_id: conversationId,
     remote_jid: remoteJid,
     instance_id: instanceId,
@@ -78,7 +81,7 @@ async function updateConversationPreview(conversationId: string, preview: string
   };
 
   if (!isFromMe) {
-    const { data: conv } = await supabase
+    const { data: conv } = await db
       .from("conversations")
       .select("unread_count")
       .eq("id", conversationId)
@@ -88,11 +91,11 @@ async function updateConversationPreview(conversationId: string, preview: string
     update.unread_count = current + 1;
   }
 
-  await supabase.from("conversations").update(update).eq("id", conversationId);
+  await db.from("conversations").update(update).eq("id", conversationId);
 }
 
-async function loadHistory(conversationId: string, instanceName: string): Promise<{ role: "user" | "model"; parts: string }[]> {
-  const { data: messages } = await supabase
+async function loadHistory(conversationId: string, _instanceName: string): Promise<{ role: "user" | "model"; parts: string }[]> {
+  const { data: messages } = await db
     .from("messages")
     .select("from_me, content, created_at")
     .eq("conversation_id", conversationId)
@@ -101,256 +104,432 @@ async function loadHistory(conversationId: string, instanceName: string): Promis
 
   if (!messages) return [];
 
-  return messages.map((m: any) => ({
-    role: m.from_me ? "model" : "user" as const,
-    parts: m.content || "",
-  }));
+  const BAD_PATTERNS = [
+    "alguém vai entrar em contato",
+    "vai retornar",
+    "vou transferir",
+    "especialistas entrará em contato",
+    "aguardando sua mensagem",
+    "histórico limpo",
+    "recebi sua mensagem",
+  ];
+
+  return messages
+    .filter((m: any) => {
+      if (!m.from_me) return true;
+      const content = (m.content || "").toLowerCase();
+      return !BAD_PATTERNS.some((p) => content.includes(p));
+    })
+    .map((m: any) => ({
+      role: m.from_me ? "model" : "user" as const,
+      parts: m.content || "",
+    }));
 }
 
-async function processAudio(
-  instanceName: string,
-  instanceRecord: { id: string; account_id: string; instance_name: string; assistantName?: string; businessName?: string },
+async function loadIaConfig(accountId: string) {
+  const { data: config } = await db
+    .from("ia_configs")
+    .select("*")
+    .eq("account_id", accountId)
+    .maybeSingle();
+  return config as IaConfig | null;
+}
+
+async function loadBusinessHours(accountId: string) {
+  const { data: hours } = await db
+    .from("business_hours")
+    .select("*")
+    .eq("user_id", accountId)
+    .order("dia_semana", { ascending: true });
+  return hours as BusinessHours[] | null;
+}
+
+async function loadServicos(accountId: string) {
+  const { data: servicos } = await db
+    .from("servicos_catalogo")
+    .select("*")
+    .eq("user_id", accountId)
+    .eq("ativo", true);
+  if (!servicos) return null;
+  return (servicos as any[]).map((s) => ({
+    id: s.id,
+    nome: s.nome,
+    duracao_minutos: s.duracao_minutos ?? null,
+    preco: s.valor_padrao ?? null,
+  })) as ServicoCatalogo[];
+}
+
+function buildMessageLabel(message: Record<string, unknown>): string {
+  if (message.audioMessage) return "[Áudio]";
+  if (message.imageMessage) return "[Imagem]";
+  if (message.videoMessage) return "[Vídeo]";
+  if (message.documentMessage) return "[Documento]";
+  if (message.locationMessage) return "[Localização]";
+  if (message.contactMessage) return "[Contato]";
+  if (message.stickerMessage) return "[Figurinha]";
+  if (message.reactionMessage) return "[Reação]";
+  return "[Mensagem]";
+}
+
+async function sendAndStore(
+  instanceRecord: { id: string; account_id: string; instance_name: string },
   remoteJid: string,
-  message: Record<string, unknown>,
-  pushName?: string
+  conversationId: string,
+  text: string,
+  aiProcessed: boolean
 ) {
-  const { id: conversationId, status } = await ensureConversation(
-    instanceRecord.id,
-    remoteJid,
-    instanceRecord.account_id,
-    pushName
-  );
-
-  await storeMessage(conversationId, remoteJid, instanceRecord.id, false, "[Áudio]");
-  await updateConversationPreview(conversationId, "[Áudio]", false);
-
-  if (status === "archived") {
-    console.log(`Conversa ${conversationId} silenciada para IA (manual/arquivada)`);
-    return { handled: true, responded: false, reason: "manual_mode" };
-  }
-
-  let audioInline: { mimeType: string; data: string } | null = null;
-  try {
-    const media = await downloadMedia(instanceName, message);
-    if (media?.data && media?.mimeType) {
-      audioInline = { mimeType: media.mimeType, data: media.data };
-    }
-  } catch (err) {
-    console.error(`Falha ao baixar áudio de ${remoteJid}:`, err);
-  }
-
-  if (!audioInline) {
-    const fallback = "Recebi seu áudio! Infelizmente não consegui processá-lo no momento. Pode me enviar uma mensagem de texto? :)";
-
-    await supabase.from("messages").insert({
-      conversation_id: conversationId,
-      remote_jid: remoteJid,
-      instance_id: instanceRecord.id,
-      from_me: true,
-      content: fallback,
-      ai_processed: false,
-    });
-
-    await sendMessage(instanceRecord.instance_name, remoteJid, fallback);
-    await updateConversationPreview(conversationId, fallback, true);
-
-    console.log(`Resposta fallback para áudio enviada para ${remoteJid}`);
-    return { handled: true, responded: true, type: "audio_fallback" };
-  }
-
-  const history = await loadHistory(conversationId, instanceName);
-
-  history.push({
-    role: "user",
-    parts: "O cliente enviou uma mensagem de áudio. Transcreva e responda adequadamente.",
-  });
-
-  console.log(`Processando áudio do Gemini para ${remoteJid}`);
-  const aiResponse = await generateResponse(
-    history,
-    pushName,
-    audioInline,
-    instanceRecord.assistantName,
-    instanceRecord.businessName
-  );
-
-  if (!aiResponse || aiResponse.trim().length === 0) {
-    console.log(`IA retornou resposta vazia para áudio de ${remoteJid}`);
-    return { handled: true, responded: false, reason: "empty_response" };
-  }
-
-  await supabase.from("messages").insert({
+  await db.from("messages").insert({
     conversation_id: conversationId,
     remote_jid: remoteJid,
     instance_id: instanceRecord.id,
     from_me: true,
-    content: aiResponse,
-    ai_processed: true,
+    content: text,
+    ai_processed: aiProcessed,
   });
 
-  await sendMessage(instanceRecord.instance_name, remoteJid, aiResponse);
-  await updateConversationPreview(conversationId, aiResponse, true);
-
-  const updatedHistory = [...history, { role: "model" as const, parts: aiResponse }];
-  checkAndRegisterLead(conversationId, remoteJid, instanceRecord.account_id, updatedHistory).catch((err) => {
-    console.error("Erro na qualificação assíncrona do áudio:", err);
-  });
-
-  console.log(`Resposta IA para áudio enviada para ${remoteJid}: "${aiResponse.slice(0, 60)}..."`);
-  return { handled: true, responded: true, type: "audio" };
+  await sendMessage(instanceRecord.instance_name, remoteJid, text);
+  await updateConversationPreview(conversationId, text, true);
 }
 
-async function processImage(
+const AGENDAR_REGEX = /📅\s*AGENDAR\|\s*([^|]+)\s*\|\s*(\d{4}-\d{2}-\d{2})\s*\|\s*(\d{2}:\d{2})/;
+const CANCELAR_REGEX = /📅\s*CANCELAR\|\s*(.+)/;
+const REAGENDAR_REGEX = /📅\s*REAGENDAR\|\s*(\d{4}-\d{2}-\d{2})\s*\|\s*(\d{2}:\d{2})/;
+const ALL_MARKERS = /📅\s*(?:AGENDAR|CANCELAR|REAGENDAR)\|.*/g;
+
+async function tryCriarAgendamento(
+  aiResponse: string,
+  instanceRecord: { id: string; account_id: string; instance_name: string },
+  conversationId: string,
+  remoteJid: string,
+  pushName?: string
+) {
+  const match = aiResponse.match(AGENDAR_REGEX);
+  if (!match) return null;
+
+  const servico = match[1].trim();
+  const data = match[2];
+  const horaInicio = match[3];
+
+  const phoneStr = remoteJid.replace(/[^0-9]/g, "").slice(0, 11);
+
+  const [h, m] = horaInicio.split(":").map(Number);
+  const horaFim = `${String(h + 1).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+
+  const { data: existingClient } = await db
+    .from("clientes")
+    .select("id")
+    .eq("user_id", instanceRecord.account_id)
+    .eq("telefone", phoneStr)
+    .maybeSingle();
+
+  let clienteId: string | null = existingClient?.id || null;
+  if (!clienteId) {
+    const { data: newClient } = await db
+      .from("clientes")
+      .insert({
+        user_id: instanceRecord.account_id,
+        nome: pushName || "Cliente",
+        telefone: phoneStr,
+      })
+      .select("id")
+      .single();
+    clienteId = newClient?.id || null;
+  }
+
+  const { data: novo, error } = await db
+    .from("agendamentos")
+    .insert({
+      user_id: instanceRecord.account_id,
+      cliente_id: clienteId,
+      cliente_nome: pushName || "Cliente",
+      telefone: phoneStr,
+      data,
+      hora_inicio: horaInicio,
+      hora_fim: horaFim,
+      servico,
+      status: "confirmed",
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error(`Erro ao criar agendamento automático:`, error.message);
+    return null;
+  }
+
+  console.log(`✅ Agendamento automático criado para ${pushName || phoneStr}: ${servico} em ${data} às ${horaInicio}`);
+  return novo;
+}
+
+async function tryCancelarAgendamento(
+  aiResponse: string,
+  instanceRecord: { id: string; account_id: string; instance_name: string },
+  conversationId: string,
+  remoteJid: string,
+  pushName?: string
+) {
+  const match = aiResponse.match(CANCELAR_REGEX);
+  if (!match) return null;
+
+  const motivo = match[1].trim();
+  const phoneStr = remoteJid.replace(/[^0-9]/g, "").slice(0, 11);
+
+  const { data: agenda } = await db
+    .from("agendamentos")
+    .select("id, servico, data, hora_inicio")
+    .eq("user_id", instanceRecord.account_id)
+    .eq("telefone", phoneStr)
+    .in("status", ["confirmed", "pending"])
+    .gte("data", new Date().toISOString().split("T")[0])
+    .order("data", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (!agenda) return null;
+
+  const { error } = await db
+    .from("agendamentos")
+    .update({ status: "cancelled" })
+    .eq("id", agenda.id);
+
+  if (error) {
+    console.error(`Erro ao cancelar agendamento:`, error.message);
+    return null;
+  }
+
+  console.log(`❌ Agendamento cancelado (${motivo}): ${agenda.servico} em ${agenda.data} às ${agenda.hora_inicio}`);
+  return agenda;
+}
+
+async function tryReagendarAgendamento(
+  aiResponse: string,
+  instanceRecord: { id: string; account_id: string; instance_name: string },
+  conversationId: string,
+  remoteJid: string,
+  pushName?: string
+) {
+  const match = aiResponse.match(REAGENDAR_REGEX);
+  if (!match) return null;
+
+  const novaData = match[1];
+  const novoHorario = match[2];
+  const phoneStr = remoteJid.replace(/[^0-9]/g, "").slice(0, 11);
+
+  const { data: agenda } = await db
+    .from("agendamentos")
+    .select("id, servico, data, hora_inicio")
+    .eq("user_id", instanceRecord.account_id)
+    .eq("telefone", phoneStr)
+    .in("status", ["confirmed", "pending"])
+    .gte("data", new Date().toISOString().split("T")[0])
+    .order("data", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (!agenda) return null;
+
+  const [h, m] = novoHorario.split(":").map(Number);
+  const novaHoraFim = `${String(h + 1).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+
+  const { error } = await db
+    .from("agendamentos")
+    .update({
+      data: novaData,
+      hora_inicio: novoHorario,
+      hora_fim: novaHoraFim,
+      status: "confirmed",
+    })
+    .eq("id", agenda.id);
+
+  if (error) {
+    console.error(`Erro ao reagendar:`, error.message);
+    return null;
+  }
+
+  console.log(`🔄 Agendamento reagendado: ${agenda.servico} de ${agenda.data} ${agenda.hora_inicio} → ${novaData} ${novoHorario}`);
+  return { ...agenda, nova_data: novaData, novo_horario: novoHorario };
+}
+
+async function checkRecurringClient(
+  accountId: string,
+  remoteJid: string
+): Promise<string | null> {
+  const phoneStr = remoteJid.replace(/[^0-9]/g, "").slice(0, 11);
+
+  const { data: lastVisit } = await db
+    .from("agendamentos")
+    .select("servico, data")
+    .eq("user_id", accountId)
+    .eq("telefone", phoneStr)
+    .in("status", ["confirmed", "completed"])
+    .order("data", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (lastVisit) {
+    return `(Contexto: este cliente já foi atendido anteriormente para "${lastVisit.servico}" em ${lastVisit.data}. Trate com familiaridade.)`;
+  }
+
+  const { data: lastOrc } = await db
+    .from("orcamentos")
+    .select("servico")
+    .eq("user_id", accountId)
+    .eq("telefone", phoneStr)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (lastOrc) {
+    return `(Contexto: este cliente já solicitou orçamento para "${lastOrc.servico}" anteriormente.)`;
+  }
+
+  return null;
+}
+
+async function processWithAi(
   instanceName: string,
   instanceRecord: { id: string; account_id: string; instance_name: string; assistantName?: string; businessName?: string },
   remoteJid: string,
-  message: Record<string, unknown>,
-  pushName?: string
-) {
-  const { id: conversationId, status } = await ensureConversation(
-    instanceRecord.id,
-    remoteJid,
-    instanceRecord.account_id,
-    pushName
-  );
+  pushName: string | undefined,
+  conversationId: string,
+  history: { role: "user" | "model"; parts: string }[],
+  mediaInline?: { mimeType: string; data: string },
+  iaConfig?: IaConfig | null,
+  businessHours?: BusinessHours[] | null,
+  servicos?: ServicoCatalogo[] | null,
+  productTier?: ProductTier
+): Promise<{ responded: boolean; type?: string }> {
+  console.log(`Gerando resposta IA para ${remoteJid} (conv: ${conversationId}) [tier: ${productTier || "basic"}, autonomy: ${iaConfig?.autonomy_level || "full(default)"}]`);
 
-  await storeMessage(conversationId, remoteJid, instanceRecord.id, false, "[Imagem]");
-  await updateConversationPreview(conversationId, "[Imagem]", false);
+  const hasScheduleConfig = !!(businessHours && businessHours.some(bh => bh.ativo && bh.abre) && servicos && servicos.length > 0);
 
-  if (status === "archived") {
-    console.log(`Conversa ${conversationId} silenciada para IA (manual/arquivada)`);
-    return { handled: true, responded: false, reason: "manual_mode" };
-  }
-
-  let imageInline: { mimeType: string; data: string } | null = null;
+  let aiResponse: string;
   try {
-    const media = await downloadMedia(instanceName, message);
-    if (media?.data && media?.mimeType) {
-      imageInline = { mimeType: media.mimeType, data: media.data };
-    }
+    aiResponse = await generateResponse(
+      history,
+      pushName,
+      mediaInline,
+      instanceRecord.assistantName,
+      instanceRecord.businessName,
+      iaConfig,
+      businessHours,
+      servicos,
+      hasScheduleConfig,
+      productTier
+    );
   } catch (err) {
-    console.error(`Falha ao baixar imagem de ${remoteJid}:`, err);
+    console.error(`Erro ao gerar resposta IA para ${remoteJid}:`, err);
+    console.log(`⚠️ Usando FALLBACK_RESPONSE: "${FALLBACK_RESPONSE}"`);
+    await sendAndStore(instanceRecord, remoteJid, conversationId, FALLBACK_RESPONSE, false);
+    return { responded: true, type: "fallback" };
   }
-
-  if (!imageInline) {
-    const fallback = "Recebi sua imagem! Infelizmente não consegui visualizá-la no momento. Pode me descrever o problema?";
-
-    await supabase.from("messages").insert({
-      conversation_id: conversationId,
-      remote_jid: remoteJid,
-      instance_id: instanceRecord.id,
-      from_me: true,
-      content: fallback,
-      ai_processed: false,
-    });
-
-    await sendMessage(instanceRecord.instance_name, remoteJid, fallback);
-    await updateConversationPreview(conversationId, fallback, true);
-
-    console.log(`Resposta fallback para imagem enviada para ${remoteJid}`);
-    return { handled: true, responded: true, type: "image_fallback" };
-  }
-
-  const history = await loadHistory(conversationId, instanceName);
-
-  history.push({
-    role: "user",
-    parts: "O cliente enviou uma imagem do local/problema. Analise e responda adequadamente.",
-  });
-
-  console.log(`Processando imagem do Gemini para ${remoteJid}`);
-  const aiResponse = await generateResponse(
-    history,
-    pushName,
-    imageInline,
-    instanceRecord.assistantName,
-    instanceRecord.businessName
-  );
-
-  if (!aiResponse || aiResponse.trim().length === 0) {
-    console.log(`IA retornou resposta vazia para imagem de ${remoteJid}`);
-    return { handled: true, responded: false, reason: "empty_response" };
-  }
-
-  await supabase.from("messages").insert({
-    conversation_id: conversationId,
-    remote_jid: remoteJid,
-    instance_id: instanceRecord.id,
-    from_me: true,
-    content: aiResponse,
-    ai_processed: true,
-  });
-
-  await sendMessage(instanceRecord.instance_name, remoteJid, aiResponse);
-  await updateConversationPreview(conversationId, aiResponse, true);
-
-  const updatedHistory = [...history, { role: "model" as const, parts: aiResponse }];
-  checkAndRegisterLead(conversationId, remoteJid, instanceRecord.account_id, updatedHistory).catch((err) => {
-    console.error("Erro na qualificação assíncrona da imagem:", err);
-  });
-
-  console.log(`Resposta IA para imagem enviada para ${remoteJid}: "${aiResponse.slice(0, 60)}..."`);
-  return { handled: true, responded: true, type: "image" };
-}
-
-async function processText(
-  instanceName: string,
-  instanceRecord: { id: string; account_id: string; instance_name: string; assistantName?: string; businessName?: string },
-  remoteJid: string,
-  content: string,
-  pushName?: string
-) {
-  const { id: conversationId, status } = await ensureConversation(
-    instanceRecord.id,
-    remoteJid,
-    instanceRecord.account_id,
-    pushName
-  );
-
-  await storeMessage(conversationId, remoteJid, instanceRecord.id, false, content);
-  await updateConversationPreview(conversationId, content, false);
-
-  if (status === "archived") {
-    console.log(`Conversa ${conversationId} silenciada para IA (manual/arquivada)`);
-    return { handled: true, responded: false, reason: "manual_mode" };
-  }
-
-  const history = await loadHistory(conversationId, instanceName);
-  history.push({ role: "user", parts: content });
-
-  console.log(`Gerando resposta IA para ${remoteJid} (conv: ${conversationId})`);
-  const aiResponse = await generateResponse(
-    history,
-    pushName,
-    undefined,
-    instanceRecord.assistantName,
-    instanceRecord.businessName
-  );
 
   if (!aiResponse || aiResponse.trim().length === 0) {
     console.log(`IA retornou resposta vazia para ${remoteJid}`);
-    return { handled: true, responded: false, reason: "empty_response" };
+    await sendAndStore(instanceRecord, remoteJid, conversationId, FALLBACK_RESPONSE, false);
+    return { responded: true, type: "fallback" };
   }
 
-  await supabase.from("messages").insert({
-    conversation_id: conversationId,
-    remote_jid: remoteJid,
-    instance_id: instanceRecord.id,
-    from_me: true,
-    content: aiResponse,
-    ai_processed: true,
+  const forbiddenPatterns = ["alguém vai", "vai retornar", "recebi sua mensagem"];
+  const lower = aiResponse.toLowerCase();
+  if (forbiddenPatterns.some(p => lower.includes(p))) {
+    console.log(`⚠️ IA retornou resposta proibida (processWithAi level), enviando fallback...`);
+    await sendAndStore(instanceRecord, remoteJid, conversationId, FALLBACK_RESPONSE, false);
+    return { responded: true, type: "fallback" };
+  }
+
+  const cleanResponse = aiResponse.replace(ALL_MARKERS, "").replace(/\n{2,}/g, "\n").trim();
+
+  await sendAndStore(instanceRecord, remoteJid, conversationId, cleanResponse, true);
+
+  const agendamento = await tryCriarAgendamento(aiResponse, instanceRecord, conversationId, remoteJid, pushName);
+  if (agendamento) {
+    const confirmacao = `✅ Agendamento confirmado! ${agendamento.servico} em ${agendamento.data} às ${agendamento.hora_inicio}.`;
+    await sendAndStore(instanceRecord, remoteJid, conversationId, confirmacao, true);
+  }
+
+  const cancelamento = await tryCancelarAgendamento(aiResponse, instanceRecord, conversationId, remoteJid, pushName);
+  if (cancelamento) {
+    const msg = `❌ Agendamento de ${cancelamento.servico} (${cancelamento.data} às ${cancelamento.hora_inicio}) cancelado conforme solicitado.`;
+    await sendAndStore(instanceRecord, remoteJid, conversationId, msg, true);
+  }
+
+  const reagendamento = await tryReagendarAgendamento(aiResponse, instanceRecord, conversationId, remoteJid, pushName);
+  if (reagendamento) {
+    const msg = `🔄 Agendamento de ${reagendamento.servico} remarcado para ${reagendamento.nova_data} às ${reagendamento.novo_horario}.`;
+    await sendAndStore(instanceRecord, remoteJid, conversationId, msg, true);
+  }
+
+  const updatedHistory = [...history, { role: "model" as const, parts: cleanResponse }];
+  if (productTier === "complete") {
+    checkAndRegisterLead(conversationId, remoteJid, instanceRecord.account_id, updatedHistory).catch((err) => {
+      console.error("Erro na qualificação assíncrona:", err);
+    });
+  }
+
+  console.log(`Resposta enviada para ${remoteJid}: "${cleanResponse.slice(0, 60)}..."`);
+  const action = reagendamento ? "reagendamento" : cancelamento ? "cancelamento" : agendamento ? "agendamento" : null;
+  if (action) console.log(`🎯 ${action} via IA para ${remoteJid}`);
+  return { responded: true, type: action ? `ai_${action}` : "ai" };
+}
+
+async function handleMediaMessage(
+  instanceName: string,
+  instanceRecord: { id: string; account_id: string; instance_name: string; assistantName?: string; businessName?: string },
+  remoteJid: string,
+  pushName: string | undefined,
+  message: Record<string, unknown>,
+  isAudio: boolean,
+  iaConfig?: IaConfig | null,
+  businessHours?: BusinessHours[] | null,
+  servicos?: ServicoCatalogo[] | null,
+  productTier?: ProductTier
+) {
+  const { id: conversationId, status } = await ensureConversation(
+    instanceRecord.id,
+    remoteJid,
+    instanceRecord.account_id,
+    pushName
+  );
+
+  const label = isAudio ? "[Áudio]" : "[Imagem]";
+  await storeMessage(conversationId, remoteJid, instanceRecord.id, false, label);
+  await updateConversationPreview(conversationId, label, false);
+
+  if (status === "archived") {
+    console.log(`Conversa ${conversationId} silenciada para IA (manual/arquivada)`);
+    return { handled: true, responded: false, reason: "manual_mode" };
+  }
+
+  let mediaInline: { mimeType: string; data: string } | null = null;
+  try {
+    const media = await downloadMedia(instanceName, message);
+    if (media?.data && media?.mimeType) {
+      mediaInline = { mimeType: media.mimeType, data: media.data };
+    }
+  } catch (err) {
+    console.error(`Falha ao baixar mídia de ${remoteJid}:`, err);
+  }
+
+  if (!mediaInline) {
+    const fallback = isAudio
+      ? "Recebi seu áudio! Não consegui ouvir agora. Pode me explicar em texto o que precisa? :)"
+      : "Recebi sua imagem! Não consegui visualizar agora. Pode me descrever o problema em texto?";
+
+    await sendAndStore(instanceRecord, remoteJid, conversationId, fallback, false);
+    console.log(`Resposta fallback para ${isAudio ? "áudio" : "imagem"} enviada para ${remoteJid}`);
+    return { handled: true, responded: true, type: `${isAudio ? "audio" : "image"}_fallback` };
+  }
+
+  const history = await loadHistory(conversationId, instanceName);
+  history.push({
+    role: "user",
+    parts: isAudio
+      ? "O cliente enviou uma mensagem de áudio. Transcreva e responda adequadamente."
+      : "O cliente enviou uma imagem. Analise a imagem e dê um PRÉ-DIAGNÓSTICO do problema visível. Depois pergunte mais detalhes e ofereça uma solução.",
   });
 
-  await sendMessage(instanceRecord.instance_name, remoteJid, aiResponse);
-  await updateConversationPreview(conversationId, aiResponse, true);
-
-  const updatedHistory = [...history, { role: "model" as const, parts: aiResponse }];
-  checkAndRegisterLead(conversationId, remoteJid, instanceRecord.account_id, updatedHistory).catch((err) => {
-    console.error("Erro na qualificação assíncrona do texto:", err);
-  });
-
-  console.log(`Resposta enviada para ${remoteJid}: "${aiResponse.slice(0, 60)}..."`);
-  return { handled: true, responded: true };
+  return processWithAi(instanceName, instanceRecord, remoteJid, pushName, conversationId, history, mediaInline, iaConfig, businessHours, servicos, productTier);
 }
 
 export async function handleIncomingMessage(payload: unknown) {
@@ -369,7 +548,7 @@ export async function handleIncomingMessage(payload: unknown) {
     return { handled: false, reason: "group" };
   }
 
-  const { data: instanceRecord } = await supabase
+  const { data: instanceRecord } = await db
     .from("evolution_instances")
     .select("id, account_id, instance_name")
     .eq("instance_name", instance)
@@ -380,14 +559,41 @@ export async function handleIncomingMessage(payload: unknown) {
     return { handled: false, reason: "instance_not_found" };
   }
 
-  const isAudio = !!data.message?.audioMessage;
-  const isImage = !!data.message?.imageMessage;
-
-  const { data: profileRecord } = await supabase
+  const { data: profileRecord } = await db
     .from("profiles")
     .select("nome_ia, nome_fantasia")
     .eq("id", instanceRecord.account_id)
     .single();
+
+  const [iaConfig, businessHours, servicos, productSlugs] = await Promise.all([
+    loadIaConfig(instanceRecord.account_id),
+    loadBusinessHours(instanceRecord.account_id),
+    loadServicos(instanceRecord.account_id),
+    getAccountProductSlugs(instanceRecord.account_id),
+  ]);
+
+  if (!iaConfig) {
+    try {
+      await db
+        .from("ia_configs")
+        .insert({ account_id: instanceRecord.account_id, autonomy_level: "full", collect_name: true, collect_phone: true, collect_service: true });
+    } catch (_) {}
+  }
+
+  if (!businessHours || businessHours.length === 0) {
+    try {
+      const defaults = [1, 2, 3, 4, 5].map((dia) => ({
+        user_id: instanceRecord.account_id,
+        dia_semana: dia,
+        abre: "08:00",
+        fecha: "18:00",
+        ativo: true,
+      }));
+      await db.from("business_hours").insert(defaults);
+    } catch (_) {}
+  }
+
+  const productTier = getProductTier(productSlugs);
 
   const instanceWithProfile = {
     ...instanceRecord,
@@ -395,37 +601,75 @@ export async function handleIncomingMessage(payload: unknown) {
     businessName: profileRecord?.nome_fantasia || undefined,
   };
 
-  if (isAudio) {
-    return processAudio(
+  const message = data.message || {};
+
+  const isAudio = !!message.audioMessage;
+  const isImage = !!message.imageMessage;
+
+  if (isAudio || isImage) {
+    return handleMediaMessage(
       instance,
       instanceWithProfile,
       remoteJid,
-      { key: data.key, message: data.message },
-      data.pushName
+      data.pushName,
+      { key: data.key, message },
+      isAudio,
+      iaConfig,
+      businessHours,
+      servicos,
+      productTier
     );
   }
 
-  if (isImage) {
-    return processImage(
-      instance,
-      instanceWithProfile,
-      remoteJid,
-      { key: data.key, message: data.message },
-      data.pushName
-    );
-  }
+  const content = (message as any).conversation || (message as any).extendedTextMessage?.text;
 
-  const content = data.message?.conversation || data.message?.extendedTextMessage?.text;
   if (!content) {
-    console.log(`Mensagem sem conteudo textual: ${instance}`);
-    return { handled: false, reason: "no_text" };
+    const { id: conversationId } = await ensureConversation(
+      instanceRecord.id,
+      remoteJid,
+      instanceRecord.account_id,
+      data.pushName
+    );
+
+    const label = buildMessageLabel(message);
+
+    await storeMessage(conversationId, remoteJid, instanceRecord.id, false, label);
+    await updateConversationPreview(conversationId, label, false);
+
+    if (iaConfig?.autonomy_level === "manual") {
+      await sendAndStore(instanceRecord, remoteJid, conversationId, FALLBACK_RESPONSE, false);
+      return { handled: true, responded: true, type: "non_text_fallback" };
+    }
+
+    const history = await loadHistory(conversationId, instance);
+    history.push({
+      role: "user",
+      parts: "O cliente enviou um conteúdo que não pude identificar. Peça educadamente para ele descrever em texto o que precisa.",
+    });
+
+    return processWithAi(instance, instanceWithProfile, remoteJid, data.pushName, conversationId, history, undefined, iaConfig, businessHours, servicos, productTier);
   }
 
-  return processText(
-    instance,
-    instanceWithProfile,
+  const { id: conversationId, status } = await ensureConversation(
+    instanceRecord.id,
     remoteJid,
-    content,
+    instanceRecord.account_id,
     data.pushName
   );
+
+  await storeMessage(conversationId, remoteJid, instanceRecord.id, false, content);
+  await updateConversationPreview(conversationId, content, false);
+
+  if (status === "archived") {
+    console.log(`Conversa ${conversationId} silenciada para IA (manual/arquivada)`);
+    return { handled: true, responded: false, reason: "manual_mode" };
+  }
+
+  const history = await loadHistory(conversationId, instance);
+
+  const recurringContext = await checkRecurringClient(instanceRecord.account_id, remoteJid);
+  const enrichedContent = recurringContext ? `${recurringContext}\n\nCliente: ${content}` : content;
+  history.push({ role: "user", parts: enrichedContent });
+
+  return processWithAi(instance, instanceWithProfile, remoteJid, data.pushName, conversationId, history, undefined, iaConfig, businessHours, servicos, productTier);
 }

@@ -2,12 +2,14 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Wifi, WifiOff, Loader2, Smartphone, X, RefreshCw, Sparkles, User, XCircle, ChevronRight, ArrowLeft } from "lucide-react";
+import { Wifi, WifiOff, Loader2, Smartphone, X, RefreshCw, Sparkles, User, XCircle, ChevronRight, ArrowLeft, Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAccount } from "@/contexts/AccountContext";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/db/client";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
 import AgendaIntegracoesSection from "@/components/configuracoes/AgendaIntegracoesSection";
 import { RAMOS } from "@/lib/ramos";
 import { toast } from "sonner";
@@ -19,6 +21,18 @@ interface Instance {
   instance_name: string;
   connection_status: string;
   qr_code: string | null;
+}
+
+interface IaConfig {
+  account_id?: string;
+  autonomy_level: "full" | "screening" | "manual";
+  collect_name: boolean;
+  collect_phone: boolean;
+  collect_service: boolean;
+  collect_address: boolean;
+  custom_instructions: string | null;
+  greeting_message: string | null;
+  closing_message: string | null;
 }
 
 interface SettingsNavItem {
@@ -33,6 +47,8 @@ const NAV_ITEMS: SettingsNavItem[] = [
   { value: "whatsapp", label: "Conexão WhatsApp", description: "QR Code e status de conexão", icon: Smartphone, group: "Canais" },
   { value: "integracoes", label: "Integrações", description: "Agendas e ferramentas", icon: Sparkles, group: "Integrações" },
   { value: "cadastro", label: "Dados Cadastrais", description: "Seus dados e perfil da IA", icon: User, group: "Conta" },
+  { value: "comportamento", label: "Comportamento da IA", description: "Autonomia, triagem e instruções", icon: Bot, group: "Conta" },
+  { value: "horarios", label: "Horários de Funcionamento", description: "Dias e horários de atendimento", icon: Clock, group: "Conta" },
   { value: "assinatura", label: "Assinatura", description: "Gerenciamento do plano", icon: XCircle, group: "Conta" },
 ];
 
@@ -83,6 +99,25 @@ export default function Configuracoes() {
   const [savingCadastros, setSavingCadastros] = useState(false);
   const [canceling, setCanceling] = useState(false);
 
+  // Estados do Comportamento da IA
+  const [autonomyLevel, setAutonomyLevel] = useState<"full" | "screening" | "manual">("screening");
+  const [collectName, setCollectName] = useState(true);
+  const [collectPhone, setCollectPhone] = useState(true);
+  const [collectService, setCollectService] = useState(true);
+  const [collectAddress, setCollectAddress] = useState(false);
+  const [customInstructions, setCustomInstructions] = useState("");
+  const [greetingMessage, setGreetingMessage] = useState("");
+  const [closingMessage, setClosingMessage] = useState("");
+  const [savingIaConfig, setSavingIaConfig] = useState(false);
+  const [loadingIaConfig, setLoadingIaConfig] = useState(true);
+
+  const DIAS = ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"];
+  const [businessHours, setBusinessHours] = useState<{ dia_semana: number; abre: string; fecha: string; ativo: boolean }[]>(
+    [1, 2, 3, 4, 5].map((d) => ({ dia_semana: d, abre: "08:00", fecha: "18:00", ativo: true }))
+  );
+  const [savingHours, setSavingHours] = useState(false);
+  const [loadingHours, setLoadingHours] = useState(true);
+
   useEffect(() => {
     if (!profile) return;
     setNomeUsuario(profile.nome_usuario || profile.nome || "");
@@ -96,12 +131,56 @@ export default function Configuracoes() {
     setRamoOutro(profile.ramo_outro || "");
   }, [profile]);
 
+  useEffect(() => {
+    if (!profile?.id) return;
+    setLoadingIaConfig(true);
+    db.from("ia_configs")
+      .select("*")
+      .eq("account_id", profile.id)
+      .maybeSingle()
+      .then(({ data, error }: any) => {
+        if (data) {
+          setAutonomyLevel(data.autonomy_level || "screening");
+          setCollectName(data.collect_name ?? true);
+          setCollectPhone(data.collect_phone ?? true);
+          setCollectService(data.collect_service ?? true);
+          setCollectAddress(data.collect_address ?? false);
+          setCustomInstructions(data.custom_instructions || "");
+          setGreetingMessage(data.greeting_message || "");
+          setClosingMessage(data.closing_message || "");
+        }
+        setLoadingIaConfig(false);
+      });
+  }, [profile?.id]);
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    setLoadingHours(true);
+    db.from("business_hours")
+      .select("*")
+      .eq("user_id", profile.id)
+      .order("dia_semana", { ascending: true })
+      .then(({ data, error }: any) => {
+        if (data && data.length > 0) {
+          setBusinessHours(
+            data.map((bh: any) => ({
+              dia_semana: bh.dia_semana,
+              abre: bh.abre || "08:00",
+              fecha: bh.fecha || "18:00",
+              ativo: bh.ativo ?? true,
+            }))
+          );
+        }
+        setLoadingHours(false);
+      });
+  }, [profile?.id]);
+
   async function handleSaveCadastros() {
     if (!profile?.id) return;
     setSavingCadastros(true);
     try {
       const ramo = RAMOS.find((r) => r.id === ramoId);
-      const { error } = await supabase
+      const { error } = await db
         .from("profiles")
         .update({
           nome_usuario: nomeUsuario,
@@ -127,12 +206,73 @@ export default function Configuracoes() {
     }
   }
 
+  async function handleSaveIaConfig() {
+    if (!profile?.id) return;
+    setSavingIaConfig(true);
+    try {
+      const config: IaConfig = {
+        autonomy_level: autonomyLevel,
+        collect_name: collectName,
+        collect_phone: collectPhone,
+        collect_service: collectService,
+        collect_address: collectAddress,
+        custom_instructions: customInstructions || null,
+        greeting_message: greetingMessage || null,
+        closing_message: closingMessage || null,
+      };
+
+      const { data: existing } = await db
+        .from("ia_configs")
+        .select("account_id")
+        .eq("account_id", profile.id)
+        .maybeSingle();
+
+      if (existing) {
+        await db.from("ia_configs").update(config).eq("account_id", profile.id);
+      } else {
+        await db.from("ia_configs").insert({ ...config, account_id: profile.id });
+      }
+
+      toast.success("Configuração de IA salva com sucesso!");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao salvar configuração.");
+    } finally {
+      setSavingIaConfig(false);
+    }
+  }
+
+  async function handleSaveHours() {
+    if (!profile?.id) return;
+    setSavingHours(true);
+    try {
+      const { data: existing } = await db.from("business_hours").select("user_id").eq("user_id", profile.id).maybeSingle();
+      for (const bh of businessHours) {
+        if (existing) {
+          await db
+            .from("business_hours")
+            .update({ abre: bh.abre || null, fecha: bh.fecha || null, ativo: bh.ativo })
+            .eq("user_id", profile.id)
+            .eq("dia_semana", bh.dia_semana);
+        } else {
+          await db
+            .from("business_hours")
+            .insert({ user_id: profile.id, dia_semana: bh.dia_semana, abre: bh.abre || null, fecha: bh.fecha || null, ativo: bh.ativo });
+        }
+      }
+      toast.success("Horários salvos com sucesso!");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao salvar horários.");
+    } finally {
+      setSavingHours(false);
+    }
+  }
+
   async function handleCancelSubscription() {
     if (!profile?.id) return;
     if (!confirm("Tem certeza que deseja cancelar sua assinatura do Atendente? Você perderá o acesso à IA de atendimento no WhatsApp.")) return;
     setCanceling(true);
     try {
-      const { error } = await supabase
+      const { error } = await db
         .from("account_products")
         .update({ ativo: false })
         .eq("account_id", profile.id)
@@ -155,7 +295,7 @@ export default function Configuracoes() {
 
   async function loadInstance() {
     setLoading(true);
-    const { data } = await supabase
+    const { data } = await db
       .from("evolution_instances")
       .select("id, instance_name, connection_status, qr_code")
       .eq("account_id", profile!.id)
@@ -170,7 +310,7 @@ export default function Configuracoes() {
   }
 
   async function createInstance(): Promise<string | null> {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await db.auth.getSession();
     const res = await fetch(`${API_BASE}/instances/create`, {
       method: "POST",
       headers: {
@@ -181,7 +321,7 @@ export default function Configuracoes() {
     });
 
     if (res.status === 409) {
-      const { data } = await supabase
+      const { data } = await db
         .from("evolution_instances")
         .select("id, instance_name, connection_status, qr_code")
         .eq("account_id", profile!.id)
@@ -203,7 +343,7 @@ export default function Configuracoes() {
   const fetchQrCode = useCallback(async (instanceId: string) => {
     setFetchingQr(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await db.auth.getSession();
       const res = await fetch(`${API_BASE}/instances/${instanceId}/connect`, {
         method: "POST",
         headers: {
@@ -238,7 +378,7 @@ export default function Configuracoes() {
   async function handleDisconnect() {
     if (!instance) return;
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await db.auth.getSession();
       await fetch(`${API_BASE}/instances/${instance.id}/disconnect`, {
         method: "POST",
         headers: {
@@ -255,7 +395,7 @@ export default function Configuracoes() {
   useEffect(() => {
     if (!instance || instance.connection_status !== "connecting") return;
     const interval = setInterval(async () => {
-      const { data } = await supabase
+      const { data } = await db
         .from("evolution_instances")
         .select("connection_status, qr_code")
         .eq("id", instance.id)
@@ -600,6 +740,216 @@ export default function Configuracoes() {
                       {savingCadastros && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                       Salvar Alterações
                     </Button>
+                  </CardContent>
+                </Card>
+              )}
+
+              {activeTab === "comportamento" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Bot className="w-4 h-4 text-primary" />
+                      Comportamento da IA
+                    </CardTitle>
+                    <CardDescription>
+                      Configure como a assistente IA deve interagir com seus clientes, quais informações coletar e qual o nível de autonomia.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {loadingIaConfig ? (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground py-8">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Carregando configurações...
+                      </div>
+                    ) : (
+                      <>
+                        {/* Nível de Autonomia */}
+                        <div className="space-y-3">
+                          <Label className="text-sm font-semibold">Nível de Autonomia</Label>
+                          <div className="space-y-2">
+                            {[
+                              { value: "full" as const, label: "Completa", desc: "IA faz tudo: triagem, orçamento e agendamento. Só chama você se não souber responder." },
+                              { value: "screening" as const, label: "Triagem", desc: "IA coleta os dados do cliente e depois avisa que o responsável vai entrar em contato." },
+                              { value: "manual" as const, label: "Manual", desc: "IA responde o básico e sempre transfere para você. Não faz perguntas aprofundadas." },
+                            ].map((opt) => (
+                              <label
+                                key={opt.value}
+                                className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                                  autonomyLevel === opt.value
+                                    ? "border-primary bg-primary/5"
+                                    : "border-border/60 hover:bg-muted/30"
+                                }`}
+                              >
+                                <input
+                                  type="radio"
+                                  name="autonomy"
+                                  value={opt.value}
+                                  checked={autonomyLevel === opt.value}
+                                  onChange={(e) => setAutonomyLevel(e.target.value as any)}
+                                  className="mt-0.5"
+                                />
+                                <div>
+                                  <p className="text-sm font-medium">{opt.label}</p>
+                                  <p className="text-xs text-muted-foreground">{opt.desc}</p>
+                                </div>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Informações a Coletar */}
+                        {autonomyLevel !== "manual" && (
+                          <div className="space-y-3">
+                            <Label className="text-sm font-semibold">Informações a Coletar</Label>
+                            <p className="text-xs text-muted-foreground -mt-1">
+                              A IA deve perguntar ao cliente por:
+                            </p>
+                            <div className="space-y-2">
+                              {[
+                                { key: "collectName", label: "Nome do cliente", state: collectName, set: setCollectName },
+                                { key: "collectPhone", label: "Telefone do cliente", state: collectPhone, set: setCollectPhone },
+                                { key: "collectService", label: "Serviço / problema desejado", state: collectService, set: setCollectService },
+                                { key: "collectAddress", label: "Endereço", state: collectAddress, set: setCollectAddress },
+                              ].map((item) => (
+                                <div key={item.key} className="flex items-center justify-between">
+                                  <Label htmlFor={item.key} className="text-sm font-normal cursor-pointer">
+                                    {item.label}
+                                  </Label>
+                                  <Switch
+                                    id={item.key}
+                                    checked={item.state}
+                                    onCheckedChange={(v) => item.set(v)}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <Separator />
+
+                        {/* Personalização */}
+                        <div className="space-y-4">
+                          <Label className="text-sm font-semibold">Personalização</Label>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="greeting" className="text-xs">Mensagem de Saudação (opcional)</Label>
+                            <Input
+                              id="greeting"
+                              placeholder="Ex: Olá! Bem-vindo à Controle Total"
+                              value={greetingMessage}
+                              onChange={(e) => setGreetingMessage(e.target.value)}
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="closing" className="text-xs">Mensagem ao Finalizar (opcional)</Label>
+                            <Input
+                              id="closing"
+                              placeholder='Ex: Obrigado! Nosso time entrará em contato em breve.'
+                              value={closingMessage}
+                              onChange={(e) => setClosingMessage(e.target.value)}
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="instructions" className="text-xs">Instruções Extras para a IA (opcional)</Label>
+                            <textarea
+                              id="instructions"
+                              rows={4}
+                              placeholder="Ex: Sempre pergunte se o cliente já foi atendido antes. Se sim, busque o histórico."
+                              value={customInstructions}
+                              onChange={(e) => setCustomInstructions(e.target.value)}
+                              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                            />
+                          </div>
+                        </div>
+
+                        <Button
+                          className="w-full"
+                          onClick={handleSaveIaConfig}
+                          disabled={savingIaConfig}
+                        >
+                          {savingIaConfig && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                          Salvar Configuração
+                        </Button>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {activeTab === "horarios" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-primary" />
+                      Horários de Funcionamento
+                    </CardTitle>
+                    <CardDescription>
+                      Configure os dias e horários que sua empresa atende. A IA usará essas informações para sugerir agendamentos.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {loadingHours ? (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground py-8">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Carregando horários...
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {businessHours.map((bh, i) => (
+                          <div key={bh.dia_semana} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                            <label className="flex items-center gap-2 min-w-[130px] text-sm font-medium cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={bh.ativo}
+                                onChange={() => {
+                                  const next = [...businessHours];
+                                  next[i] = { ...next[i], ativo: !next[i].ativo };
+                                  setBusinessHours(next);
+                                }}
+                                className="rounded"
+                              />
+                              {DIAS[bh.dia_semana]}
+                            </label>
+                            {bh.ativo && (
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="time"
+                                  value={bh.abre}
+                                  onChange={(e) => {
+                                    const next = [...businessHours];
+                                    next[i] = { ...next[i], abre: e.target.value };
+                                    setBusinessHours(next);
+                                  }}
+                                  className="flex h-9 w-28 rounded-md border border-input bg-background px-3 py-1 text-sm"
+                                />
+                                <span className="text-muted-foreground text-xs">às</span>
+                                <input
+                                  type="time"
+                                  value={bh.fecha}
+                                  onChange={(e) => {
+                                    const next = [...businessHours];
+                                    next[i] = { ...next[i], fecha: e.target.value };
+                                    setBusinessHours(next);
+                                  }}
+                                  className="flex h-9 w-28 rounded-md border border-input bg-background px-3 py-1 text-sm"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        <Button
+                          className="w-full mt-2"
+                          onClick={handleSaveHours}
+                          disabled={savingHours}
+                        >
+                          {savingHours && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                          Salvar Horários
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               )}

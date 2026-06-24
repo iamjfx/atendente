@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { supabase } from "../lib/supabase.js";
+import { db } from "../lib/db.js";
 
 export interface AuthenticatedRequest extends Request {
   user?: any;
@@ -13,7 +13,7 @@ export async function authMiddleware(req: AuthenticatedRequest, res: Response, n
 
   const token = authHeader.split(" ")[1];
   try {
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    const { data: { user }, error } = await db.auth.getUser(token);
     if (error || !user) {
       return res.status(401).json({ error: "Invalid or expired token" });
     }

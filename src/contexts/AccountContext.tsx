@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "./AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/db/client";
 
 interface ProductAccess {
   slug: string;
@@ -49,7 +49,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     
     let profileData: any = null;
 
-    const { data: dataWithIa, error: errorWithIa } = await supabase
+    const { data: dataWithIa, error: errorWithIa } = await db
       .from("profiles")
       .select("id, nome, nome_usuario, nome_ia, email, nome_fantasia, logo_url, onboarding_completo, telefone, cnpj_cpf, cidade, uf, ramo_atividade, ramo_outro")
       .eq("id", user.id)
@@ -59,7 +59,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       profileData = dataWithIa;
     } else {
       // Se falhar porque nome_ia não existe, tenta sem ela
-      const { data: dataWithoutIa, error: errorWithoutIa } = await supabase
+      const { data: dataWithoutIa, error: errorWithoutIa } = await db
         .from("profiles")
         .select("id, nome, nome_usuario, email, nome_fantasia, logo_url, onboarding_completo, telefone, cnpj_cpf, cidade, uf, ramo_atividade, ramo_outro")
         .eq("id", user.id)
@@ -75,7 +75,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
 
     const ownerId = profileData?.id ?? user.id;
 
-    const { data: productRows } = await supabase
+    const { data: productRows } = await db
       .from("account_products")
       .select("product_slug, ativo")
       .eq("account_id", ownerId);
@@ -102,7 +102,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     const idx = loaded.findIndex(p => p.slug === "atendente");
     if (idx === -1) {
       try {
-        await supabase.from("account_products").insert({
+        await db.from("account_products").insert({
           account_id: ownerId,
           product_slug: "atendente",
           ativo: true

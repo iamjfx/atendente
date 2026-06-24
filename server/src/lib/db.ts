@@ -1,7 +1,10 @@
 import pg from 'pg';
+import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 
 dotenv.config();
+
+const JWT_SECRET = process.env.JWT_SECRET || 'chave_secreta_jwt_producao_erp';
 
 const { Pool } = pg;
 
@@ -19,7 +22,7 @@ interface QueryFilter {
   val: any;
 }
 
-class SupabaseQueryBuilder {
+class QueryBuilder {
   private table: string;
   private method: string = 'SELECT';
   private selectCols: string = '*';
@@ -34,7 +37,9 @@ class SupabaseQueryBuilder {
   }
 
   select(columns: string = '*') {
-    this.method = 'SELECT';
+    if (this.method !== 'INSERT' && this.method !== 'UPDATE') {
+      this.method = 'SELECT';
+    }
     this.selectCols = columns;
     return this;
   }
@@ -82,6 +87,11 @@ class SupabaseQueryBuilder {
     return this;
   }
 
+  in(column: string, values: any[]) {
+    this.filters.push({ col: column, op: 'IN', val: values });
+    return this;
+  }
+
   order(column: string, options?: { ascending?: boolean }) {
     const dir = options?.ascending === false ? 'DESC' : 'ASC';
     this.orderVal = `ORDER BY "${column}" ${dir}`;
@@ -123,8 +133,15 @@ class SupabaseQueryBuilder {
         const whereClauses: string[] = [];
         for (const f of this.filters) {
           const prefix = this.table === 'message_queue' && this.selectCols.includes('evolution_instances') ? 'mq.' : '';
-          whereClauses.push(`${prefix}"${f.col}" ${f.op} $${paramIdx++}`);
-          params.push(f.val);
+          if (f.op === 'IN') {
+            const vals = Array.isArray(f.val) ? f.val : [f.val];
+            const placeholders = vals.map(() => `$${paramIdx++}`).join(', ');
+            whereClauses.push(`${prefix}"${f.col}" IN (${placeholders})`);
+            params.push(...vals);
+          } else {
+            whereClauses.push(`${prefix}"${f.col}" ${f.op} $${paramIdx++}`);
+            params.push(f.val);
+          }
         }
 
         if (whereClauses.length > 0) {
@@ -144,7 +161,7 @@ class SupabaseQueryBuilder {
         const obj = payload[0];
         const keys = Object.keys(obj);
         const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
-        sql = `INSERT INTO "${this.table}" (${keys.map(k => `"${k}"`).join(', ')}) VALUES (${placeholders}) RETURNING *`;
+        sql = `INSERT INTO "${this.table}" (${keys.map(k => `"${k}"`).join(', ')}) VALUES (${placeholders}) RETURNING ${this.selectCols}`;
         params.push(...keys.map(k => obj[k]));
       } else if (this.method === 'UPDATE') {
         const keys = Object.keys(this.body);
@@ -154,8 +171,15 @@ class SupabaseQueryBuilder {
         sql = `UPDATE "${this.table}" SET ${setClauses.join(', ')}`;
         const whereClauses: string[] = [];
         for (const f of this.filters) {
-          whereClauses.push(`"${f.col}" ${f.op} $${paramIdx++}`);
-          params.push(f.val);
+          if (f.op === 'IN') {
+            const vals = Array.isArray(f.val) ? f.val : [f.val];
+            const placeholders = vals.map(() => `$${paramIdx++}`).join(', ');
+            whereClauses.push(`"${f.col}" IN (${placeholders})`);
+            params.push(...vals);
+          } else {
+            whereClauses.push(`"${f.col}" ${f.op} $${paramIdx++}`);
+            params.push(f.val);
+          }
         }
         if (whereClauses.length > 0) {
           sql += ` WHERE ${whereClauses.join(' AND ')}`;
@@ -165,8 +189,15 @@ class SupabaseQueryBuilder {
         sql = `DELETE FROM "${this.table}"`;
         const whereClauses: string[] = [];
         for (const f of this.filters) {
-          whereClauses.push(`"${f.col}" ${f.op} $${paramIdx++}`);
-          params.push(f.val);
+          if (f.op === 'IN') {
+            const vals = Array.isArray(f.val) ? f.val : [f.val];
+            const placeholders = vals.map(() => `$${paramIdx++}`).join(', ');
+            whereClauses.push(`"${f.col}" IN (${placeholders})`);
+            params.push(...vals);
+          } else {
+            whereClauses.push(`"${f.col}" ${f.op} $${paramIdx++}`);
+            params.push(f.val);
+          }
         }
         if (whereClauses.length > 0) {
           sql += ` WHERE ${whereClauses.join(' AND ')}`;
@@ -204,19 +235,21 @@ class SupabaseQueryBuilder {
   }
 }
 
-export const supabase = {
+export const db = {
   from(table: string) {
-    return new SupabaseQueryBuilder(table);
+    return new QueryBuilder(table);
   },
   auth: {
     async getUser(token: string) {
       try {
-        const base64Url = token.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(atob(base64).split('').map((c) => {
-          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
-        const user = JSON.parse(jsonPayload);
+        const decoded = jwt.verify(token, JWT_SECRET) as any;
+        const user = {
+          id: decoded.id || decoded.sub,
+          sub: decoded.sub,
+          email: decoded.email,
+          aud: decoded.aud,
+          role: decoded.role,
+        };
         return { data: { user }, error: null };
       } catch (err: any) {
         return { data: { user: null }, error: { message: err.message } };

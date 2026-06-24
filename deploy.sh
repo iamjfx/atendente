@@ -8,7 +8,7 @@ BACKEND_DEST="/var/www/atendente-server"
 
 echo "=== 1. Compilando o Frontend localmente (atendente) ==="
 # Configura o endpoint do Controle Total API para banco/auth compartilhado e a API do Atendente
-export VITE_API_URL="https://www.controletotal.app"
+export VITE_API_URL="https://atendente.controletotal.app"
 export VITE_API_BASE_URL="https://atendente.controletotal.app/api"
 npm run build
 

@@ -1,5 +1,5 @@
 import { Router, Response } from "express";
-import { supabase } from "../lib/supabase.js";
+import { db } from "../lib/db.js";
 import { z } from "zod";
 import { authMiddleware, AuthenticatedRequest } from "../middlewares/auth.js";
 
@@ -15,7 +15,7 @@ router.get("/conversations/:accountId", async (req: AuthenticatedRequest, res: R
     return res.status(403).json({ error: "Forbidden: Access denied to this account" });
   }
 
-  const { data: conversations, error } = await supabase
+  const { data: conversations, error } = await db
     .from("conversations")
     .select("*")
     .eq("account_id", accountId)
@@ -33,7 +33,7 @@ router.get("/:conversationId", async (req: AuthenticatedRequest, res: Response) 
   const { conversationId } = req.params;
 
   // Verify conversation ownership
-  const { data: conv, error: convErr } = await supabase
+  const { data: conv, error: convErr } = await db
     .from("conversations")
     .select("account_id")
     .eq("id", conversationId)
@@ -48,7 +48,7 @@ router.get("/:conversationId", async (req: AuthenticatedRequest, res: Response) 
   }
   const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
 
-  const { data: messages, error } = await supabase
+  const { data: messages, error } = await db
     .from("messages")
     .select("*")
     .eq("conversation_id", conversationId)
@@ -75,7 +75,7 @@ router.post("/send", async (req: AuthenticatedRequest, res: Response) => {
 
   const { conversationId, text } = parsed.data;
 
-  const { data: conversation, error: convError } = await supabase
+  const { data: conversation, error: convError } = await db
     .from("conversations")
     .select("id, instance_id, remote_jid, account_id")
     .eq("id", conversationId)
@@ -89,7 +89,7 @@ router.post("/send", async (req: AuthenticatedRequest, res: Response) => {
     return res.status(403).json({ error: "Forbidden: You do not own this conversation" });
   }
 
-  const { data: instance, error: instError } = await supabase
+  const { data: instance, error: instError } = await db
     .from("evolution_instances")
     .select("id, instance_name")
     .eq("id", conversation.instance_id)
@@ -99,7 +99,7 @@ router.post("/send", async (req: AuthenticatedRequest, res: Response) => {
     return res.status(404).json({ error: "Instance not found" });
   }
 
-  const { data: newMessage, error: msgError } = await supabase
+  const { data: newMessage, error: msgError } = await db
     .from("messages")
     .insert({
       conversation_id: conversationId,
@@ -115,7 +115,7 @@ router.post("/send", async (req: AuthenticatedRequest, res: Response) => {
     return res.status(500).json({ error: msgError.message });
   }
 
-  await supabase
+  await db
     .from("conversations")
     .update({
       last_message_preview: text.slice(0, 100),

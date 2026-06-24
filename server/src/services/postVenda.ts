@@ -1,4 +1,5 @@
-import { supabase } from "../lib/supabase.js";
+import { db } from "../lib/db.js";
+import { getAccountProductSlugs, hasProduct } from "../lib/products.js";
 
 // Interval in milliseconds to check for pending pós-venda messages (e.g., every 5 minutes)
 const CHECK_INTERVAL = 5 * 60 * 1000; 
@@ -11,7 +12,7 @@ export async function processPostVenda() {
     const cutoffTime = new Date(Date.now() - FEEDBACK_DELAY_MS);
 
     // 1. Fetch approved budgets that are older than 24 hours
-    const { data: orcamentos, error } = await supabase
+    const { data: orcamentos, error } = await db
       .from("orcamentos")
       .select("*")
       .eq("status", "aprovado")
@@ -26,8 +27,12 @@ export async function processPostVenda() {
     if (!orcamentos || orcamentos.length === 0) return;
 
     for (const orc of orcamentos) {
+      // 1.5 Skip accounts without controletotal product
+      const accountSlugs = await getAccountProductSlugs(orc.user_id);
+      if (!hasProduct(accountSlugs, "controletotal")) continue;
+
       // 2. Fetch the instance to get account owner's Google review link
-      const { data: profile } = await supabase
+      const { data: profile } = await db
         .from("profiles")
         .select("nome_fantasia, nome_ia, ramo_outro")
         .eq("id", orc.user_id)
@@ -39,7 +44,7 @@ export async function processPostVenda() {
       const businessName = profile?.nome_fantasia || "nossa empresa";
 
       // 3. Find if we already sent a feedback message to this phone number
-      const { data: existingMsgs } = await supabase
+      const { data: existingMsgs } = await db
         .from("messages")
         .select("id")
         .eq("remote_jid", `${orc.telefone}@s.whatsapp.net`)
@@ -52,7 +57,7 @@ export async function processPostVenda() {
       }
 
       // 4. Get active conversation for this user to append message history
-      const { data: conv } = await supabase
+      const { data: conv } = await db
         .from("conversations")
         .select("id, instance_id")
         .eq("account_id", orc.user_id)
@@ -70,7 +75,7 @@ export async function processPostVenda() {
       console.log(`Pós-Venda: Agendando mensagem de feedback para ${orc.cliente_nome} (${orc.telefone})`);
 
       // 5. Insert feedback message into messages table (so it appears in chat history)
-      await supabase.from("messages").insert({
+      await db.from("messages").insert({
         conversation_id: conv.id,
         remote_jid: `${orc.telefone}@s.whatsapp.net`,
         instance_id: conv.instance_id,
@@ -80,7 +85,7 @@ export async function processPostVenda() {
       });
 
       // 6. Insert into queue to send WhatsApp message
-      await supabase.from("message_queue").insert({
+      await db.from("message_queue").insert({
         conversation_id: conv.id,
         instance_id: conv.instance_id,
         remote_jid: `${orc.telefone}@s.whatsapp.net`,
@@ -89,7 +94,7 @@ export async function processPostVenda() {
       });
 
       // 7. Update conversation preview
-      await supabase
+      await db
         .from("conversations")
         .update({
           last_message_preview: "Mensagem de pós-venda enviada.",

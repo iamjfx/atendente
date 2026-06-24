@@ -1,6 +1,7 @@
-import { supabase } from "../lib/supabase.js";
+import { db } from "../lib/db.js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { config } from "../config.js";
+import { getAccountProductSlugs, hasProduct } from "../lib/products.js";
 
 const genAI = new GoogleGenerativeAI(config.gemini.apiKey);
 
@@ -11,13 +12,17 @@ export async function checkAndRegisterLead(
   history: { role: "user" | "model"; parts: string }[]
 ) {
   try {
+    // 0. Only for accounts with controletotal
+    const slugs = await getAccountProductSlugs(accountId);
+    if (!hasProduct(slugs, "controletotal")) return;
+
     // 1. Check if we already have an active budget for this conversation in the last 3 days
     const threeDaysAgo = new Date();
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 
     const phoneStr = remoteJid.replace(/[^0-9]/g, "").slice(0, 11);
 
-    const { data: existingOrc } = await supabase
+    const { data: existingOrc } = await db
       .from("orcamentos")
       .select("id")
       .eq("user_id", accountId)
@@ -33,7 +38,7 @@ export async function checkAndRegisterLead(
 
     // 2. Call Gemini to check qualification status
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash",
       generationConfig: {
         responseMimeType: "application/json",
       },
@@ -75,7 +80,7 @@ ${conversationText}
 
     // 3. Find or Create Client in the database
     let clienteId: string | null = null;
-    const { data: existingClient } = await supabase
+    const { data: existingClient } = await db
       .from("clientes")
       .select("id")
       .eq("user_id", accountId)
@@ -94,7 +99,7 @@ ${conversationText}
         uf = "SP";
       }
 
-      const { data: newClient, error: clientErr } = await supabase
+      const { data: newClient, error: clientErr } = await db
         .from("clientes")
         .insert({
           user_id: accountId,
@@ -121,7 +126,7 @@ ${conversationText}
       data.address ? `Endereço fornecido: ${data.address}` : null
     ].filter(Boolean).join("\n\n");
 
-    const { error: orcErr } = await supabase.from("orcamentos").insert({
+    const { error: orcErr } = await db.from("orcamentos").insert({
       user_id: accountId,
       cliente_id: clienteId,
       cliente_nome: data.clientName,

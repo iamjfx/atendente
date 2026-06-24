@@ -1,5 +1,5 @@
 import { Router, Response } from "express";
-import { supabase } from "../lib/supabase.js";
+import { db } from "../lib/db.js";
 import {
   createInstance,
   getInstance,
@@ -22,7 +22,7 @@ router.get("/:accountId", async (req: AuthenticatedRequest, res: Response) => {
     return res.status(403).json({ error: "Forbidden: Access denied to this account" });
   }
 
-  const { data: instances, error } = await supabase
+  const { data: instances, error } = await db
     .from("evolution_instances")
     .select("*")
     .eq("account_id", accountId);
@@ -58,7 +58,7 @@ router.post("/create", async (req: AuthenticatedRequest, res: Response) => {
 
   const instanceName = `atd_${accountId.replace(/-/g, "").slice(0, 12)}`;
 
-  const { data: existing } = await supabase
+  const { data: existing } = await db
     .from("evolution_instances")
     .select("id")
     .eq("account_id", accountId)
@@ -71,7 +71,7 @@ router.post("/create", async (req: AuthenticatedRequest, res: Response) => {
   try {
     const evoResult = await createInstance(instanceName);
 
-    const { data: instance, error } = await supabase
+    const { data: instance, error } = await db
       .from("evolution_instances")
       .insert({
         account_id: accountId,
@@ -98,7 +98,7 @@ router.post("/create", async (req: AuthenticatedRequest, res: Response) => {
 router.post("/:instanceId/connect", async (req: AuthenticatedRequest, res: Response) => {
   const { instanceId } = req.params;
 
-  const { data: instance, error } = await supabase
+  const { data: instance, error } = await db
     .from("evolution_instances")
     .select("*")
     .eq("id", instanceId)
@@ -113,7 +113,7 @@ router.post("/:instanceId/connect", async (req: AuthenticatedRequest, res: Respo
   }
 
   try {
-    await supabase
+    await db
       .from("evolution_instances")
       .update({ connection_status: "connecting" })
       .eq("id", instanceId);
@@ -125,7 +125,7 @@ router.post("/:instanceId/connect", async (req: AuthenticatedRequest, res: Respo
       : "";
 
     if (qrData.code) {
-      await supabase
+      await db
         .from("evolution_instances")
         .update({
           qr_code: qrData.code,
@@ -142,7 +142,7 @@ router.post("/:instanceId/connect", async (req: AuthenticatedRequest, res: Respo
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    await supabase
+    await db
       .from("evolution_instances")
       .update({ connection_status: "disconnected" })
       .eq("id", instanceId);
@@ -153,7 +153,7 @@ router.post("/:instanceId/connect", async (req: AuthenticatedRequest, res: Respo
 router.post("/:instanceId/disconnect", async (req: AuthenticatedRequest, res: Response) => {
   const { instanceId } = req.params;
 
-  const { data: instance, error } = await supabase
+  const { data: instance, error } = await db
     .from("evolution_instances")
     .select("*")
     .eq("id", instanceId)
@@ -170,7 +170,7 @@ router.post("/:instanceId/disconnect", async (req: AuthenticatedRequest, res: Re
   try {
     await disconnectInstance(instance.instance_name);
 
-    await supabase
+    await db
       .from("evolution_instances")
       .update({
         connection_status: "disconnected",
@@ -188,7 +188,7 @@ router.post("/:instanceId/disconnect", async (req: AuthenticatedRequest, res: Re
 router.post("/:instanceId/webhook", async (req: AuthenticatedRequest, res: Response) => {
   const { instanceId } = req.params;
 
-  const { data: instance, error } = await supabase
+  const { data: instance, error } = await db
     .from("evolution_instances")
     .select("*")
     .eq("id", instanceId)

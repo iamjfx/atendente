@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/db/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,7 +53,7 @@ export default function Auth() {
     setBusy(true);
     setError("");
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await db.auth.signInWithPassword({ email, password });
     if (error) {
       setError(error.message);
       setBusy(false);
@@ -90,7 +90,7 @@ export default function Auth() {
       return;
     }
 
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await db.auth.signUp({
       email,
       password,
       options: {
@@ -105,7 +105,7 @@ export default function Auth() {
 
     if (!data.session) {
       // Tenta fazer o login automático com a senha fornecida
-      const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+      const { error: loginError } = await db.auth.signInWithPassword({ email, password });
       if (loginError) {
         setError(loginError.message);
         setBusy(false);

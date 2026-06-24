@@ -3,7 +3,7 @@ import { MessageCircle, Search, Loader2, Send, Bot, User, Check, AlertCircle, Pl
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/db/client";
 import { useAccount } from "@/contexts/AccountContext";
 import { toast } from "sonner";
 
@@ -58,7 +58,7 @@ export default function Conversas() {
     loadConversations();
 
     // Subscribe to conversation updates in real-time
-    const channel = supabase
+    const channel = db
       .channel("conversations_changes")
       .on(
         "postgres_changes",
@@ -70,7 +70,7 @@ export default function Conversas() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      db.removeChannel(channel);
     };
   }, [profile?.id]);
 
@@ -83,7 +83,7 @@ export default function Conversas() {
 
     loadMessages(selectedConv.id);
 
-    const channel = supabase
+    const channel = db
       .channel(`realtime:messages:${selectedConv.id}`)
       .on(
         "postgres_changes",
@@ -105,7 +105,7 @@ export default function Conversas() {
 
     // Clear unread count on selection
     if (selectedConv.unread_count > 0) {
-      supabase
+      db
         .from("conversations")
         .update({ unread_count: 0 })
         .eq("id", selectedConv.id)
@@ -117,14 +117,14 @@ export default function Conversas() {
     }
 
     return () => {
-      supabase.removeChannel(channel);
+      db.removeChannel(channel);
     };
   }, [selectedConv?.id]);
 
   async function loadConversations(showLoader = true) {
     if (showLoader) setLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("conversations")
         .select("*")
         .eq("account_id", profile!.id)
@@ -150,7 +150,7 @@ export default function Conversas() {
   async function loadMessages(conversationId: string) {
     setLoadingMessages(true);
     try {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("messages")
         .select("*")
         .eq("conversation_id", conversationId)
@@ -169,7 +169,7 @@ export default function Conversas() {
   async function toggleIaStatus(conv: Conversation) {
     const newStatus = conv.status === "active" ? "archived" : "active";
     try {
-      const { error } = await supabase
+      const { error } = await db
         .from("conversations")
         .update({ status: newStatus })
         .eq("id", conv.id);
@@ -202,7 +202,7 @@ export default function Conversas() {
 
     try {
       // 1. Insert into messages table (local display)
-      const { data: newMsg, error: msgError } = await supabase
+      const { data: newMsg, error: msgError } = await db
         .from("messages")
         .insert({
           conversation_id: selectedConv.id,
@@ -218,7 +218,7 @@ export default function Conversas() {
       if (msgError) throw msgError;
 
       // 2. Insert into message_queue for delivery
-      const { error: queueError } = await supabase
+      const { error: queueError } = await db
         .from("message_queue")
         .insert({
           conversation_id: selectedConv.id,
@@ -231,7 +231,7 @@ export default function Conversas() {
       if (queueError) throw queueError;
 
       // 3. Update preview & set status to archived (automatic hand-off to manual)
-      const { error: convError } = await supabase
+      const { error: convError } = await db
         .from("conversations")
         .update({
           last_message_preview: content.slice(0, 100),

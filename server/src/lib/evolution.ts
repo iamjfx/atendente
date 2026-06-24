@@ -122,26 +122,41 @@ export async function downloadMedia(
   instanceName: string,
   message: Record<string, unknown>
 ): Promise<{ data: string; mimeType: string } | null> {
-  const res = await fetch(
-    `${config.evolution.apiUrl}/chat/downloadMedia/${instanceName}`,
-    {
-      method: "POST",
-      headers: headers(),
-      body: JSON.stringify({ message }),
-    }
-  );
-
-  if (res.status === 404) {
-    console.log(`Media download endpoint nao disponivel (Evolution API v2.1.0) — pulando`);
+  const messageKey = message?.key as { id?: string } | undefined;
+  const msgId = messageKey?.id;
+  if (!msgId) {
+    console.log(`downloadMedia: message.key.id nao encontrado para ${instanceName}`);
     return null;
   }
+
+  const url = `${config.evolution.apiUrl}/chat/getBase64FromMediaMessage/${instanceName}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: headers(),
+    body: JSON.stringify({
+      message: { key: { id: msgId } },
+      convertToMp4: false,
+    }),
+  });
 
   if (!res.ok) {
-    console.log(`Evolution downloadMedia falhou: ${res.status}`);
+    const text = await res.text();
+    console.log(`Evolution getBase64FromMediaMessage falhou: ${res.status} ${text}`);
     return null;
   }
 
-  return res.json();
+  const data = await res.json() as {
+    base64?: string;
+    mimetype?: string;
+    mediaType?: string;
+  };
+
+  if (!data.base64 || !data.mimetype) {
+    console.log(`Evolution getBase64FromMediaMessage: resposta sem dados para ${instanceName}`);
+    return null;
+  }
+
+  return { data: data.base64, mimeType: data.mimetype };
 }
 
 export async function setWebhook(

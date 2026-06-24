@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/db/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAccount } from "@/contexts/AccountContext";
 import { Button } from "@/components/ui/button";
@@ -104,7 +104,7 @@ export default function Onboarding() {
   );
 
   async function createInstance(accountId: string): Promise<string | null> {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await db.auth.getSession();
     const res = await fetch(`${API_BASE}/instances/create`, {
       method: "POST",
       headers: {
@@ -115,7 +115,7 @@ export default function Onboarding() {
     });
 
     if (res.status === 409) {
-      const { data } = await supabase
+      const { data } = await db
         .from("evolution_instances")
         .select("id, instance_name, connection_status, qr_code")
         .eq("account_id", accountId)
@@ -137,7 +137,7 @@ export default function Onboarding() {
   const fetchQrCode = useCallback(async (instanceId: string) => {
     setFetchingQr(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await db.auth.getSession();
       const res = await fetch(`${API_BASE}/instances/${instanceId}/connect`, {
         method: "POST",
         headers: {
@@ -160,7 +160,7 @@ export default function Onboarding() {
     if (step !== 4 || !instance || instance.connection_status === "connected") return;
 
     const interval = setInterval(async () => {
-      const { data } = await supabase
+      const { data } = await db
         .from("evolution_instances")
         .select("connection_status, qr_code")
         .eq("id", instance.id)
@@ -201,7 +201,7 @@ export default function Onboarding() {
     setLoading(true);
     try {
       const ramo = getRamoById(ramoId);
-      let { error } = await supabase
+      let { error } = await db
         .from("profiles")
         .update({
           nome_usuario: nomeUsuario,
@@ -220,7 +220,7 @@ export default function Onboarding() {
 
       if (error) {
         if (error.message?.includes("nome_ia") || error.message?.includes("schema cache") || error.code === "PGRST204") {
-          const fallbackRes = await supabase
+          const fallbackRes = await db
             .from("profiles")
             .update({
               nome_usuario: nomeUsuario,
@@ -262,7 +262,7 @@ export default function Onboarding() {
 
     setLoading(true);
     try {
-      const { error } = await supabase
+      const { error } = await db
         .from("profiles")
         .update({
           onboarding_completo: true,

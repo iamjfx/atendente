@@ -1,4 +1,4 @@
-import { supabase } from "../lib/supabase.js";
+import { db } from "../lib/db.js";
 import { sendMessage } from "../lib/evolution.js";
 
 let isProcessing = false;
@@ -10,7 +10,7 @@ export async function processQueue() {
   isProcessing = true;
 
   try {
-    const { data: pending, error } = await supabase
+    const { data: pending, error } = await db
       .from("message_queue")
       .select("*, evolution_instances!inner(instance_name)")
       .eq("status", "pending")
@@ -28,7 +28,7 @@ export async function processQueue() {
 
     for (const item of pending) {
       try {
-        await supabase
+        await db
           .from("message_queue")
           .update({ status: "sending" })
           .eq("id", item.id);
@@ -37,7 +37,7 @@ export async function processQueue() {
 
         await sendMessage(instanceName, item.remote_jid, item.content);
 
-        await supabase
+        await db
           .from("message_queue")
           .update({ status: "sent", sent_at: new Date().toISOString() })
           .eq("id", item.id);
@@ -47,7 +47,7 @@ export async function processQueue() {
         const message = err instanceof Error ? err.message : "Unknown error";
         console.error(`Fila: erro ao enviar mensagem ${item.id}:`, message);
 
-        await supabase
+        await db
           .from("message_queue")
           .update({ status: "failed", error: message })
           .eq("id", item.id);

@@ -1,7 +1,7 @@
 // O base URL da API do Controle Total (onde estão a autenticação e as rotas genéricas de banco de dados compartilhadas)
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
-class SupabaseQueryBuilder {
+class QueryBuilder {
   private table: string;
   private method: string = 'GET';
   private body: any = null;
@@ -78,9 +78,7 @@ class SupabaseQueryBuilder {
       if (this.orderVal) qParams.append('order', this.orderVal);
       
       for (const [k, v] of Object.entries(this.filters)) {
-        if (this.method === 'GET' || k === 'id') {
-          qParams.append(k, v);
-        }
+        qParams.append(k, v);
       }
 
       const qString = qParams.toString();
@@ -114,7 +112,7 @@ class SupabaseQueryBuilder {
   }
 }
 
-class SupabaseStorageBuilder {
+class StorageBuilder {
   private bucket: string;
 
   constructor(bucket: string) {
@@ -190,9 +188,9 @@ function triggerAuthStateChange(event: string, session: any) {
   }
 }
 
-export const supabase = {
+export const db = {
   from(table: string) {
-    return new SupabaseQueryBuilder(table);
+    return new QueryBuilder(table);
   },
 
   channel(name: string) {
@@ -206,7 +204,7 @@ export const supabase = {
 
   storage: {
     from(bucket: string) {
-      return new SupabaseStorageBuilder(bucket);
+      return new StorageBuilder(bucket);
     }
   },
 
