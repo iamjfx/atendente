@@ -133,6 +133,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   };
 
   const hasProduct = (slug: string) => {
+    if (slug === "atendente") return true;
     return products.some(p => p.slug === slug && p.ativo);
   };
 

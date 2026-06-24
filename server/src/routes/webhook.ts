@@ -1,15 +1,31 @@
 import { Router, Request, Response } from "express";
 import { handleIncomingMessage } from "../services/messageHandler.js";
-import { config } from "../config.js";
+import { supabase } from "../lib/supabase.js";
 
 const router = Router();
 
-router.post("/", async (req: Request, res: Response) => {
-  const apikeyHeader = req.headers.apikey;
+async function handleConnectionUpdate(instanceName: string, state: string) {
+  if (state === "open") {
+    console.log(`WhatsApp conectado: ${instanceName}`);
+    await supabase
+      .from("evolution_instances")
+      .update({ connection_status: "connected", qr_code: null })
+      .eq("instance_name", instanceName);
+  } else if (state === "close" || state === "disconnected") {
+    console.log(`WhatsApp desconectado: ${instanceName}`);
+    await supabase
+      .from("evolution_instances")
+      .update({ connection_status: "disconnected" })
+      .eq("instance_name", instanceName);
+  }
+}
 
-  if (apikeyHeader !== config.evolution.apiKey) {
-    console.warn("Tentativa de chamada de webhook não autorizada.");
-    return res.status(401).json({ error: "Unauthorized webhook key" });
+router.post("/", async (req: Request, res: Response) => {
+  const { event, instance, data } = req.body;
+
+  if (event === "connection.update" && instance && data?.state) {
+    await handleConnectionUpdate(instance, data.state);
+    return res.json({ handled: true, event: "connection.update" });
   }
 
   try {

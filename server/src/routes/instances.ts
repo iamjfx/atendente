@@ -32,7 +32,7 @@ router.get("/:accountId", async (req: AuthenticatedRequest, res: Response) => {
   }
 
   const enriched = await Promise.all(
-    (instances || []).map(async (inst) => {
+    (instances || []).map(async (inst: any) => {
       try {
         const state = await getConnectionState(inst.instance_name);
         return { ...inst, connection_state: state.state };

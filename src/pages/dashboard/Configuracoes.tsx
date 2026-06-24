@@ -231,6 +231,8 @@ export default function Configuracoes() {
 
     if (!instanceId) return;
     await fetchQrCode(instanceId);
+
+    setInstance((prev) => prev ? { ...prev, connection_status: "connecting" } : prev);
   }
 
   async function handleDisconnect() {

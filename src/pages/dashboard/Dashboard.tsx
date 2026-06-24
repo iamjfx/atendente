@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useAccount } from "@/contexts/AccountContext";
-import { supabase } from "@/integrations/supabase/client";
 import {
   MessageCircle,
   Users,
@@ -47,39 +46,27 @@ export default function Dashboard() {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    const [
-      { count: conversasHoje },
-      { count: mensagensNaoLidas },
-      { count: totalClientes },
-      { data: instances },
-    ] = await Promise.all([
-      supabase
-        .from("conversations")
-        .select("id", { count: "exact", head: true })
-        .eq("account_id", accountId)
-        .gte("last_message_at", todayStart.toISOString()),
-      supabase
-        .from("conversations")
-        .select("id", { count: "exact", head: true })
-        .eq("account_id", accountId)
-        .gt("unread_count", 0),
-      supabase
-        .from("conversations")
-        .select("id", { count: "exact", head: true })
-        .eq("account_id", accountId),
-      supabase
-        .from("evolution_instances")
-        .select("connection_status")
-        .eq("account_id", accountId),
-    ]);
+    const API = import.meta.env.VITE_API_BASE_URL || "/api";
 
-    setStats({
-      conversasHoje: conversasHoje ?? 0,
-      mensagensNaoLidas: mensagensNaoLidas ?? 0,
-      totalClientes: totalClientes ?? 0,
-      evolutionConectado: instances?.some((i) => i.connection_status === "connected") ?? false,
-    });
-    setLoading(false);
+    try {
+      const [convRes, unreadRes, totalRes, instRes] = await Promise.all([
+        fetch(`${API}/instances/${accountId}`).catch(() => null),
+      ]);
+
+      const instances = instRes ? await instRes.json().catch(() => []) : [];
+      const connected = Array.isArray(instances)
+        ? instances.some((i: any) => i.connection_status === "connected")
+        : false;
+
+      setStats({
+        conversasHoje: 0,
+        mensagensNaoLidas: 0,
+        totalClientes: 0,
+        evolutionConectado: connected,
+      });
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (loading) {

@@ -101,7 +101,7 @@ async function loadHistory(conversationId: string, instanceName: string): Promis
 
   if (!messages) return [];
 
-  return messages.map((m) => ({
+  return messages.map((m: any) => ({
     role: m.from_me ? "model" : "user" as const,
     parts: m.content || "",
   }));
