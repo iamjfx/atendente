@@ -4,7 +4,13 @@ export const config = {
   port: parseInt(process.env.PORT || "3001", 10),
   evolution: {
     apiUrl: process.env.EVOLUTION_API_URL || "http://srv1778424.hstgr.cloud:32774",
-    apiKey: process.env.EVOLUTION_API_KEY || "AT30TE2863rXC0iWj7MoDxOKiPghZkKr",
+    apiKey: (() => {
+      if (!process.env.EVOLUTION_API_KEY) {
+        console.error('ERRO CRÍTICO: EVOLUTION_API_KEY não definida.');
+        process.exit(1);
+      }
+      return process.env.EVOLUTION_API_KEY;
+    })(),
   },
   gemini: {
     apiKey: process.env.GEMINI_API_KEY || "",

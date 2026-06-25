@@ -34,7 +34,7 @@ ssh ${SERVER_USER}@${SERVER_IP} "
   # Decriptar .env do arquivo criptografado (se existir)
   if [ -f .env.encrypted ]; then
     echo 'Decriptando .env.encrypted...'
-    SOPS_AGE_KEY_FILE=/etc/atendente/age-key.txt sops --decrypt dist/.env.encrypted > .env
+    SOPS_AGE_KEY_FILE=/etc/atendente/age-key.txt sops --decrypt --input-type dotenv --output-type dotenv .env.encrypted > .env
     chmod 600 .env
     echo '.env gerado com segredos criptografados.'
   elif [ ! -f .env ]; then
