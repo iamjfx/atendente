@@ -217,7 +217,13 @@ router.get("/me", async (req, res: Response) => {
 
   try {
     const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    const decoded = jwt.decode(token) as any;
+    if (!decoded) {
+      return res.status(401).json({ error: "Token inválido" });
+    }
+    if (decoded.exp && Date.now() >= decoded.exp * 1000) {
+      return res.status(401).json({ error: "Token expirado" });
+    }
 
     return res.json({
       id: decoded.sub,

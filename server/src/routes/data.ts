@@ -48,8 +48,11 @@ router.get("/:table", authMiddleware, async (req: AuthenticatedRequest, res: Res
     }
 
     if (req.query.order) {
-      const [col, dir] = (req.query.order as string).split(".");
-      query = query.order(col, { ascending: dir !== "desc" });
+      const orders = Array.isArray(req.query.order) ? req.query.order : [req.query.order];
+      for (const ord of orders) {
+        const [col, dir] = (ord as string).split(".");
+        query = query.order(col, { ascending: dir !== "desc" });
+      }
     }
 
     if (req.query.single === "true") {

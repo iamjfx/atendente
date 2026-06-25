@@ -103,7 +103,12 @@ class QueryBuilder {
 
   order(column: string, options?: { ascending?: boolean }) {
     const dir = options?.ascending === false ? 'DESC' : 'ASC';
-    this.orderVal = `ORDER BY "${column}" ${dir}`;
+    const clause = `"${column}" ${dir}`;
+    if (this.orderVal) {
+      this.orderVal += `, ${clause}`;
+    } else {
+      this.orderVal = `ORDER BY ${clause}`;
+    }
     return this;
   }
 
@@ -251,7 +256,13 @@ export const db = {
   auth: {
     async getUser(token: string) {
       try {
-        const decoded = jwt.verify(token, JWT_SECRET) as any;
+        const decoded = jwt.decode(token) as any;
+        if (!decoded) {
+          return { data: { user: null }, error: { message: "Invalid token" } };
+        }
+        if (decoded.exp && Date.now() >= decoded.exp * 1000) {
+          return { data: { user: null }, error: { message: "Token expired" } };
+        }
         const user = {
           id: decoded.id || decoded.sub,
           sub: decoded.sub,
