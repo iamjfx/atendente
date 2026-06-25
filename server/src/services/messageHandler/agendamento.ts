@@ -22,7 +22,18 @@ export async function tryCriarAgendamento(
   // Fallback NLP: tenta extrair data/horário do texto natural
   const nlp = extractAgendamentoNLP(aiResponse);
   if (nlp) {
-    console.log(`⚠️ Agendamento via NLP: "${nlp.servico}" em ${nlp.data} às ${nlp.horario}`);
+    console.log(`⚠️ Agendamento via NLP: ${nlp.tipo} "${nlp.servico}" em ${nlp.data} às ${nlp.horario}`);
+
+    if (nlp.tipo === "reagendar") {
+      return tryReagendarAgendamentoNLP(nlp, instanceRecord, remoteJid, pushName);
+    }
+
+    // Verifica duplicidade antes de criar
+    if (await existeAgendamentoNoHorario(instanceRecord.account_id, remoteJid, nlp.data, nlp.horario)) {
+      console.log(`⚠️ Agendamento duplicado ignorado (NLP): ${nlp.servico} em ${nlp.data} às ${nlp.horario}`);
+      return null;
+    }
+
     const fakeMatch = ["", nlp.servico, nlp.data, nlp.horario] as unknown as RegExpMatchArray;
     return criarAgendamentoComMatch(fakeMatch, instanceRecord, remoteJid, pushName);
   }
@@ -79,8 +90,19 @@ function parseDataRelativa(texto: string): { data: string; horario: string } | n
   return { data, horario };
 }
 
-function extractAgendamentoNLP(aiResponse: string): { servico: string; data: string; horario: string } | null {
+function extractAgendamentoNLP(aiResponse: string): { tipo: "criar" | "reagendar"; servico: string; data: string; horario: string } | null {
   const lower = aiResponse.toLowerCase();
+
+  // Reagendamento tem prioridade
+  if (lower.includes("reagendad") || lower.includes("remarcad") || lower.includes("alterad")) {
+    const parsed = parseDataRelativa(aiResponse);
+    if (!parsed) return null;
+    const servicoMatch = aiResponse.match(/para\s+(.+?)(?:\s*[,.]|\s+em|\s+no|\s+na|$)/i);
+    const servico = servicoMatch ? servicoMatch[1].trim() : "consulta";
+    console.log(`🔍 NLP (reagendar): texto="${aiResponse.slice(0, 60)}..." data=${parsed.data} horario=${parsed.horario}`);
+    return { tipo: "reagendar", servico, data: parsed.data, horario: parsed.horario };
+  }
+
   if (!lower.includes("agendad") && !lower.includes("confirmad") && !lower.includes("marcad")) return null;
 
   const parsed = parseDataRelativa(aiResponse);
@@ -90,8 +112,61 @@ function extractAgendamentoNLP(aiResponse: string): { servico: string; data: str
     || aiResponse.match(/agendad[ao]\s+(.+?)(?:\s*[,.]|\s+para|\s+em|\s+no|\s+na|$)/i);
   const servico = servicoMatch ? servicoMatch[1].trim() : "consulta";
 
-  console.log(`🔍 NLP: texto="${aiResponse.slice(0, 60)}..." servico="${servico}" data=${parsed.data} horario=${parsed.horario}`);
-  return { servico, data: parsed.data, horario: parsed.horario };
+  console.log(`🔍 NLP (criar): texto="${aiResponse.slice(0, 60)}..." servico="${servico}" data=${parsed.data} horario=${parsed.horario}`);
+  return { tipo: "criar", servico, data: parsed.data, horario: parsed.horario };
+}
+
+async function existeAgendamentoNoHorario(accountId: string, remoteJid: string, data: string, horario: string): Promise<boolean> {
+  const phoneStr = remoteJid.replace(/[^0-9]/g, "").slice(0, 11);
+  const { data: existente } = await db
+    .from("agendamentos")
+    .select("id")
+    .eq("user_id", accountId)
+    .eq("telefone", phoneStr)
+    .eq("data", data)
+    .eq("hora_inicio", horario)
+    .not("status", "eq", "cancelled")
+    .maybeSingle();
+  return !!existente;
+}
+
+async function tryReagendarAgendamentoNLP(
+  nlp: { servico: string; data: string; horario: string },
+  instanceRecord: { id: string; account_id: string; instance_name: string },
+  remoteJid: string,
+  pushName?: string
+) {
+  const phoneStr = remoteJid.replace(/[^0-9]/g, "").slice(0, 11);
+
+  // Busca agendamento existente do cliente (mais recente primeiro)
+  const { data: agenda } = await db
+    .from("agendamentos")
+    .select("id, servico, data, hora_inicio")
+    .eq("user_id", instanceRecord.account_id)
+    .eq("telefone", phoneStr)
+    .in("status", ["confirmed", "pending"])
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!agenda) return null;
+
+  // Atualiza com nova data/hora
+  const [h, m] = nlp.horario.split(":").map(Number);
+  const novaHoraFim = `${String(h + 1).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+
+  const { error } = await db
+    .from("agendamentos")
+    .update({ data: nlp.data, hora_inicio: nlp.horario, hora_fim: novaHoraFim, status: "confirmed" })
+    .eq("id", agenda.id);
+
+  if (error) {
+    console.error(`Erro ao reagendar via NLP:`, error.message);
+    return null;
+  }
+
+  console.log(`🔄 Agendamento reagendado via NLP: ${agenda.servico} → ${nlp.data} ${nlp.horario}`);
+  return { ...agenda, nova_data: nlp.data, novo_horario: nlp.horario, deslocamento_minutos: 30 };
 }
 
 async function criarAgendamentoComMatch(
@@ -107,6 +182,12 @@ async function criarAgendamentoComMatch(
   const deslocamentoMin = match[4] ? parseInt(match[4]) : null;
 
   const phoneStr = remoteJid.replace(/[^0-9]/g, "").slice(0, 11);
+
+  // Verifica duplicidade
+  if (await existeAgendamentoNoHorario(instanceRecord.account_id, remoteJid, data, horaInicio)) {
+    console.log(`⚠️ Agendamento duplicado ignorado: ${servico} em ${data} às ${horaInicio}`);
+    return null;
+  }
 
   let deslocamento = deslocamentoMin ?? 30;
   if (!deslocamentoMin) {

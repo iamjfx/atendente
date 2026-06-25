@@ -146,9 +146,10 @@ A data DEVE ser uma data real no formato YYYY-MM-DD e o dia da semana deve corre
 - Se o cliente pedir para CANCELAR um agendamento, confirme e inclua no final da resposta:
 📅 CANCELAR|motivo
 Exemplo: "📅 CANCELAR|Cliente desistiu"
-- Se o cliente pedir para REMARCAR, pergunte a nova data/horário e inclua no final da resposta:
+- Se o cliente pedir para ALTERAR/REMARCAR um horário, use:
 📅 REAGENDAR|nova_data|novo_horario
-Exemplo: "📅 REAGENDAR|2026-06-26|10:00"`;
+Exemplo: "📅 REAGENDAR|2026-06-26|10:00"
+NÃO crie um novo agendamento com 📅 AGENDAR quando o cliente quiser apenas alterar o horário — use 📅 REAGENDAR.`;
       }
       break;
 
