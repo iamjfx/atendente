@@ -118,8 +118,10 @@ router.post("/register", async (req, res: Response) => {
       account_id: user.id,
       autonomy_level: "full",
       collect_name: true,
-      collect_phone: true,
+      collect_phone: false,
       collect_service: true,
+      collect_address: true,
+      deslocamento_minutos: 30,
     });
 
     const businessHoursDefaults = [1, 2, 3, 4, 5].map((dia) => ({

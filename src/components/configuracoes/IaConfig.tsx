@@ -28,9 +28,9 @@ export default function IaConfig() {
 
   const [autonomyLevel, setAutonomyLevel] = useState<"full" | "screening" | "manual">("screening");
   const [collectName, setCollectName] = useState(true);
-  const [collectPhone, setCollectPhone] = useState(true);
+  const [collectPhone, setCollectPhone] = useState(false);
   const [collectService, setCollectService] = useState(true);
-  const [collectAddress, setCollectAddress] = useState(false);
+  const [collectAddress, setCollectAddress] = useState(true);
   const [customInstructions, setCustomInstructions] = useState("");
   const [greetingMessage, setGreetingMessage] = useState("");
   const [closingMessage, setClosingMessage] = useState("");
@@ -49,9 +49,9 @@ export default function IaConfig() {
         if (data) {
           setAutonomyLevel(data.autonomy_level || "screening");
           setCollectName(data.collect_name ?? true);
-          setCollectPhone(data.collect_phone ?? true);
+          setCollectPhone(data.collect_phone ?? false);
           setCollectService(data.collect_service ?? true);
-          setCollectAddress(data.collect_address ?? false);
+          setCollectAddress(data.collect_address ?? true);
           setCustomInstructions(data.custom_instructions || "");
           setGreetingMessage(data.greeting_message || "");
           setClosingMessage(data.closing_message || "");

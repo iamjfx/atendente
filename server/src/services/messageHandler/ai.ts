@@ -5,6 +5,13 @@ import { checkAndRegisterLead } from "../leadQualificator.js";
 
 const FALLBACK_RESPONSE = "Poxa, tive uma instabilidade aqui! Pode me explicar de novo o que precisa? 😊";
 
+function fmtData(data: Date | string, hora: string): string {
+  const d = typeof data === "string" ? new Date(data + "T12:00:00") : data;
+  const dia = String(d.getDate()).padStart(2, "0");
+  const mes = String(d.getMonth() + 1).padStart(2, "0");
+  return `${dia}/${mes} às ${hora}hs`;
+}
+
 export async function processWithAi(
   instanceName: string,
   instanceRecord: { id: string; account_id: string; instance_name: string; assistantName?: string; businessName?: string },
@@ -63,7 +70,7 @@ export async function processWithAi(
 
   const agendamento = await tryCriarAgendamento(aiResponse, instanceRecord, conversationId, remoteJid, pushName);
   if (agendamento) {
-    const confirmacao = `✅ Agendamento confirmado! ${agendamento.servico} em ${agendamento.data} às ${agendamento.hora_inicio}.`;
+    const confirmacao = `✅ Agendamento confirmado! ${agendamento.servico} em ${fmtData(agendamento.data, agendamento.hora_inicio)}.`;
     await sendAndStore(instanceRecord, remoteJid, conversationId, confirmacao, true);
     notificarDono(instanceRecord, agendamento, remoteJid, pushName);
   }

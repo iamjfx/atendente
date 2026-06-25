@@ -29,6 +29,13 @@ export async function tryCriarAgendamento(
   return null;
 }
 
+function fmtData(data: Date | string, hora: string): string {
+  const d = typeof data === "string" ? new Date(data + "T12:00:00") : data;
+  const dia = String(d.getDate()).padStart(2, "0");
+  const mes = String(d.getMonth() + 1).padStart(2, "0");
+  return `${dia}/${mes} às ${hora}hs`;
+}
+
 const DIAS_MAP: Record<string, number> = {
   domingo: 0, segunda: 1, "segunda-feira": 1, terça: 2, "terça-feira": 2,
   quarta: 3, "quarta-feira": 3, quinta: 4, "quinta-feira": 4,
@@ -279,8 +286,7 @@ export async function notificarDono(
       `📅 *Novo agendamento* - ${empresa}\n\n` +
       `Cliente: ${clienteNome}\n` +
       `Serviço: ${agendamento.servico}\n` +
-      `Data: ${agendamento.data}\n` +
-      `Horário: ${agendamento.hora_inicio}\n` +
+      `Data: ${fmtData(agendamento.data, agendamento.hora_inicio)}\n` +
       `Deslocamento: ${desloc} min\n` +
       `Saída prevista: ${saidaStr}`;
 

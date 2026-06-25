@@ -47,9 +47,9 @@ function buildSystemPrompt(
   const cfg: IaConfig = iaConfig || {
     autonomy_level: "full",
     collect_name: true,
-    collect_phone: true,
+    collect_phone: false,
     collect_service: true,
-    collect_address: false,
+    collect_address: true,
     custom_instructions: null,
     greeting_message: null,
     closing_message: null,
@@ -107,7 +107,9 @@ function buildSystemPrompt(
       prompt += `\n\nNÍVEL DE AUTONOMIA: Completa
 - Você resolve o atendimento por conta própria. Só em último caso deve mencionar que precisa de ajuda.
 - Se o cliente pedir orçamento/preço e você não tiver acesso: responda "Para fazer o orçamento preciso agendar uma visita técnica. Tem disponibilidade esta semana?" e já sugira um horário.
-- Informações a coletar quando pertinente: ${collectFields.join(", ")}.
+- Informações a coletar (obrigatório antes de agendar): ${collectFields.join(", ")}.
+- NÃO pergunte o telefone — o número do cliente já está disponível automaticamente pelo WhatsApp.
+- ATENÇÃO: o endereço do cliente é OBRIGATÓRIO para realizar o agendamento. Se o cliente ainda não informou o endereço completo (rua, número, bairro, cidade), pergunte antes de sugerir horários.
 - Quando o cliente descrever um problema, faça perguntas para entender melhor: "Há quanto tempo?", "Já teve isso antes?", "Pode me descrever melhor o que está acontecendo?"
 - Após entender o problema, ofereça uma solução: agendar uma visita técnica ou agendar um horário.`;
 
@@ -120,8 +122,7 @@ function buildSystemPrompt(
       } else {
         prompt += `
 - Se o cliente enviar FOTO: peça para ele descrever o problema em texto.
-- Você NÃO tem acesso a preços dos serviços. Se o cliente pedir orçamento/preço, diga que o valor será avaliado em uma visita técnica e já ofereça agendar um horário para essa avaliação.
-- Após coletar os dados e agendar, o agendamento é registrado automaticamente. Avise o cliente que ele receberá uma confirmação em breve.`;
+- Você NÃO tem acesso a preços dos serviços. Se o cliente pedir orçamento/preço, diga que o valor será avaliado em uma visita técnica e já ofereça agendar um horário para essa avaliação.`;
       }
 
       if (schedulingEnabled) {

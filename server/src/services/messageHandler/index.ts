@@ -73,7 +73,7 @@ export async function handleIncomingMessage(payload: unknown) {
     try {
       await db
         .from("ia_configs")
-        .insert({ account_id: instanceRecord.account_id, autonomy_level: "full", collect_name: true, collect_phone: true, collect_service: true });
+        .insert({ account_id: instanceRecord.account_id, autonomy_level: "full", collect_name: true, collect_phone: false, collect_service: true, collect_address: true, deslocamento_minutos: 30 });
     } catch (_) {}
   }
 
