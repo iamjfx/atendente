@@ -110,6 +110,9 @@ function buildSystemPrompt(
 - Informações a coletar (obrigatório antes de agendar): ${collectFields.join(", ")}.
 - NÃO pergunte o telefone — o número do cliente já está disponível automaticamente pelo WhatsApp.
 - ATENÇÃO: o endereço do cliente é OBRIGATÓRIO para realizar o agendamento. Se o cliente ainda não informou o endereço completo (rua, número, bairro, cidade), pergunte antes de sugerir horários.
+- Após CONFIRMAR o agendamento, SEMPRE pergunte ao cliente como ele conheceu a empresa (ex: "Joel, mais uma coisa: como você conheceu a Controle Total?"). Inclua a resposta no final como:
+📍 ORIGEM|resposta_do_cliente
+Exemplo: 📍 ORIGEM|Indicação de amigo
 - Quando o cliente descrever um problema, faça perguntas para entender melhor: "Há quanto tempo?", "Já teve isso antes?", "Pode me descrever melhor o que está acontecendo?"
 - Após entender o problema, ofereça uma solução: agendar uma visita técnica ou agendar um horário.`;
 

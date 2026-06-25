@@ -50,9 +50,18 @@ export function useAgendamentos() {
 
   const load = useCallback(async () => {
     setLoading(true);
+
+    const { data: userData } = await db.auth.getUser();
+    const userId = (userData?.user as any)?.sub ?? (userData?.user as any)?.id;
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
+
     const { data, error } = await db
       .from("agendamentos")
       .select("*")
+      .eq("user_id", userId)
       .order("data", { ascending: true })
       .order("hora_inicio", { ascending: true });
 

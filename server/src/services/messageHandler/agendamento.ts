@@ -4,7 +4,8 @@ import { sendMessage } from "../../lib/evolution.js";
 export const AGENDAR_REGEX = /📅\s*AGENDAR\|\s*([^|]+)\s*\|\s*(\d{4}-\d{2}-\d{2})\s*\|\s*(\d{2}:\d{2})(?:\|\s*(\d+))?/;
 export const CANCELAR_REGEX = /📅\s*CANCELAR\|\s*(.+)/;
 export const REAGENDAR_REGEX = /📅\s*REAGENDAR\|\s*(\d{4}-\d{2}-\d{2})\s*\|\s*(\d{2}:\d{2})/;
-export const ALL_MARKERS = /📅\s*(?:AGENDAR|CANCELAR|REAGENDAR)\|.*/g;
+export const ORIGEM_REGEX = /📍\s*ORIGEM\s*\|\s*(.+)/;
+export const ALL_MARKERS = /📅\s*(?:AGENDAR|CANCELAR|REAGENDAR)\|.*|📍\s*ORIGEM\s*\|.*/g;
 
 export async function tryCriarAgendamento(
   aiResponse: string,
@@ -256,6 +257,47 @@ export async function tryReagendarAgendamento(
 
   console.log(`🔄 Agendamento reagendado: ${agenda.servico} de ${agenda.data} ${agenda.hora_inicio} → ${novaData} ${novoHorario}`);
   return { ...agenda, nova_data: novaData, novo_horario: novoHorario };
+}
+
+export function extractOrigem(aiResponse: string): string | null {
+  const match = aiResponse.match(ORIGEM_REGEX);
+  if (!match) return null;
+  return match[1].trim();
+}
+
+export async function salvarOrigem(
+  remoteJid: string,
+  accountId: string,
+  origem: string
+) {
+  const phoneStr = remoteJid.replace(/[^0-9]/g, "").slice(0, 11);
+  await db
+    .from("clientes")
+    .update({ origem })
+    .eq("user_id", accountId)
+    .eq("telefone", phoneStr);
+  console.log(`📍 Origem salva para ${phoneStr}: "${origem}"`);
+}
+
+export async function sendPerguntaOrigem(
+  instanceRecord: { id: string; account_id: string; instance_name: string; businessName?: string },
+  remoteJid: string,
+  pushName?: string
+) {
+  const empresa = instanceRecord.businessName || "a empresa";
+  const nome = pushName || "";
+  const msg = nome
+    ? `${nome}, mais uma coisa: como você conheceu ${empresa}? 😊`
+    : `Mais uma coisa: como você conheceu ${empresa}? 😊`;
+
+  setTimeout(async () => {
+    try {
+      await sendMessage(instanceRecord.instance_name, remoteJid, msg);
+      console.log(`📍 Pergunta de origem enviada para ${remoteJid}`);
+    } catch (err) {
+      console.error(`Erro ao enviar pergunta de origem:`, err);
+    }
+  }, 5 * 60 * 1000);
 }
 
 export async function notificarDono(

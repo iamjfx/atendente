@@ -1,6 +1,6 @@
 import { generateResponse, IaConfig, BusinessHours, ServicoCatalogo, ProductTier } from "../../lib/gemini.js";
 import { sendAndStore } from "./media.js";
-import { tryCriarAgendamento, tryCancelarAgendamento, tryReagendarAgendamento, notificarDono, ALL_MARKERS } from "./agendamento.js";
+import { tryCriarAgendamento, tryCancelarAgendamento, tryReagendarAgendamento, notificarDono, sendPerguntaOrigem, extractOrigem, salvarOrigem, ALL_MARKERS } from "./agendamento.js";
 import { checkAndRegisterLead } from "../leadQualificator.js";
 
 const FALLBACK_RESPONSE = "Poxa, tive uma instabilidade aqui! Pode me explicar de novo o que precisa? 😊";
@@ -73,6 +73,13 @@ export async function processWithAi(
     const confirmacao = `✅ Agendamento confirmado! ${agendamento.servico} em ${fmtData(agendamento.data, agendamento.hora_inicio)}.`;
     await sendAndStore(instanceRecord, remoteJid, conversationId, confirmacao, true);
     notificarDono(instanceRecord, agendamento, remoteJid, pushName);
+    sendPerguntaOrigem({ ...instanceRecord, businessName: instanceRecord.businessName }, remoteJid, pushName);
+  }
+
+  // Extrai origem do marcador na resposta da IA
+  const origem = extractOrigem(aiResponse);
+  if (origem) {
+    salvarOrigem(remoteJid, instanceRecord.account_id, origem);
   }
 
   const cancelamento = await tryCancelarAgendamento(aiResponse, instanceRecord, conversationId, remoteJid, pushName);
