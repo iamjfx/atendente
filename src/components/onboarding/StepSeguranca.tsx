@@ -1,4 +1,4 @@
-import { Lock, ShieldCheck, EyeOff, ClipboardCheck, ArrowLeft, Loader2, CheckCircle2 } from "lucide-react";
+import { Lock, ShieldCheck, EyeOff, ClipboardCheck, ArrowLeft, Loader2, CheckCircle2, Smartphone, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Props = {
@@ -70,6 +70,27 @@ export default function StepSeguranca({ lgpdAccepted, setLgpdAccepted, loading, 
             Estou ciente e concordo com as políticas de privacidade de dados, autorizando o tratamento técnico dos dados do meu WhatsApp comercial em conformidade com as diretrizes da LGPD (Lei Geral de Proteção de Dados).
           </p>
         </div>
+      </div>
+
+      <div className="p-5 rounded-2xl border border-sky-200 dark:border-sky-800 bg-sky-50/50 dark:bg-sky-950/10">
+        <p className="text-xs font-bold text-sky-700 dark:text-sky-300 mb-3 flex items-center gap-2">
+          <Smartphone className="w-4 h-4" />
+          Dica: use o Atendente como app no celular
+        </p>
+        <ul className="space-y-2 text-[11px] text-sky-600 dark:text-sky-400">
+          <li className="flex items-start gap-2">
+            <span className="font-bold shrink-0 mt-px">1.</span>
+            <span><strong className="text-sky-700 dark:text-sky-300">Adicione à tela inicial:</strong> no iOS, clique em Compartilhar <span className="text-sky-500">→</span> Adicionar à Tela de Início. No Android, Menu <span className="text-sky-500">→</span> Adicionar à tela inicial. O Atendente vira um app de verdade.</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="font-bold shrink-0 mt-px">2.</span>
+            <span><strong className="text-sky-700 dark:text-sky-300">Comece o dia pela Agenda:</strong> sempre que um cliente agendar, a visita aparece automaticamente na <strong>Agenda</strong>. É lá que você acompanha sua rotina de visitas.</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <CalendarDays className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+            <span>Não precisa ficar no WhatsApp o tempo todo — a IA atende, agenda e avisa você.</span>
+          </li>
+        </ul>
       </div>
 
       <div className="flex justify-between pt-4 border-t border-neutral-100 dark:border-neutral-900">

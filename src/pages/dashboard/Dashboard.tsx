@@ -311,13 +311,17 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      {temAgendamentosHoje && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Agenda de hoje</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {status!.agendamentos_hoje.map((apt) => (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-base">Agenda de hoje</CardTitle>
+          <Button variant="ghost" size="sm" onClick={() => navigate("/agenda")} className="text-xs gap-1">
+            <CalendarDays className="w-3.5 h-3.5" />
+            Ver agenda
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {temAgendamentosHoje ? (
+            status!.agendamentos_hoje.map((apt) => (
               <div key={apt.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                 <div>
                   <p className="text-sm font-medium">{apt.cliente_nome}</p>
@@ -327,10 +331,21 @@ export default function Dashboard() {
                   {apt.status === "confirmed" ? "Confirmado" : "Pendente"}
                 </span>
               </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
+            ))
+          ) : (
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 cursor-pointer hover:bg-muted transition-colors" onClick={() => navigate("/agenda")}>
+              <CalendarDays className="w-5 h-5 text-muted-foreground shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-medium">Nenhuma visita hoje</p>
+                <p className="text-xs text-muted-foreground">
+                  Clientes podem agendar pelo WhatsApp. Acompanhe pela Agenda.
+                </p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
