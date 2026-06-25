@@ -19,31 +19,28 @@ echo "=== 3. Enviando Frontend (arquivos estáticos) ==="
 rsync -avz --delete dist/ ${SERVER_USER}@${SERVER_IP}:${FRONTEND_DEST}/
 
 echo "=== 4. Enviando Backend (código Express + TS) ==="
-rsync -avz --exclude 'node_modules' --exclude '.env' --exclude 'dist' server/ ${SERVER_USER}@${SERVER_IP}:${BACKEND_DEST}/
+rsync -avz --exclude 'node_modules' --exclude '.env' --exclude '.env.production' --exclude 'dist' server/ ${SERVER_USER}@${SERVER_IP}:${BACKEND_DEST}/
 
-echo "=== 5. Instalando dependências e iniciando a API no VPS ==="
+echo "=== 5. Instalando dependências e configurando ambiente ==="
 ssh ${SERVER_USER}@${SERVER_IP} "
   cd ${BACKEND_DEST}
   
-  # Instalar dependências (incluindo pg e tsx para TypeScript)
+  # Instalar dependências
   npm install
 
-  # Compilar o código TypeScript do backend se houver script de build
+  # Compilar o código TypeScript
   npm run build
 
-  # Criar .env básico para o backend atendente se não existir
-  if [ ! -f .env ]; then
-    echo 'Criando .env padrão do banco local...'
-    echo 'PORT=5003' > .env
-    echo 'DB_USER=postgres' >> .env
-    echo 'DB_HOST=localhost' >> .env
-    echo 'DB_NAME=controletotal' >> .env
-    echo 'DB_PASSWORD=Wukhoh-miqxim-simhu6' >> .env
-    echo 'DB_PORT=5432' >> .env
-    echo 'EVOLUTION_API_URL=http://localhost:8080' >> .env
-    echo 'EVOLUTION_API_KEY=sua_chave_evolution' >> .env
-    echo 'GEMINI_API_KEY=sua_chave_gemini' >> .env
-    echo 'WEBHOOK_BASE_URL=http://${SERVER_IP}:5003' >> .env
+  # Decriptar .env do arquivo criptografado (se existir)
+  if [ -f .env.encrypted ]; then
+    echo 'Decriptando .env.encrypted...'
+    SOPS_AGE_KEY_FILE=/etc/atendente/age-key.txt sops --decrypt dist/.env.encrypted > .env
+    chmod 600 .env
+    echo '.env gerado com segredos criptografados.'
+  elif [ ! -f .env ]; then
+    # Fallback: avisa que não tem .env
+    echo '⚠️ ATENÇÃO: Nenhum .env encontrado! Crie /etc/atendente/.env ou corrija o deploy.'
+    exit 1
   fi
 
   # Iniciar ou reiniciar o servidor usando PM2
@@ -53,11 +50,10 @@ ssh ${SERVER_USER}@${SERVER_IP} "
     pm2 restart atendente-api
   else
     echo 'Iniciando novo processo PM2...'
-    # Como o backend é em TS, rodamos a build em js
-    pm2 start dist/index.js --name 'atendente-api'
+    pm2 start dist/index.js --name 'atendente-api' --cwd ${BACKEND_DEST}
   fi
 
-  pm2 save
+  pm2 save --force
 "
 
 echo "=== 6. Aplicando configuração do Nginx no VPS ==="
