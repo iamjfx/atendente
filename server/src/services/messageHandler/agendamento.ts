@@ -5,7 +5,8 @@ export const AGENDAR_REGEX = /📅\s*AGENDAR\|\s*([^|]+)\s*\|\s*(\d{4}-\d{2}-\d{
 export const CANCELAR_REGEX = /📅\s*CANCELAR\|\s*(.+)/;
 export const REAGENDAR_REGEX = /📅\s*REAGENDAR\|\s*(\d{4}-\d{2}-\d{2})\s*\|\s*(\d{2}:\d{2})/;
 export const ORIGEM_REGEX = /📍\s*ORIGEM\s*\|\s*(.+)/;
-export const ALL_MARKERS = /📅\s*(?:AGENDAR|CANCELAR|REAGENDAR)\|.*|📍\s*ORIGEM\s*\|.*/g;
+export const ENDERECO_REGEX = /📍\s*ENDERECO\s*\|\s*(.+)/;
+export const ALL_MARKERS = /📅\s*(?:AGENDAR|CANCELAR|REAGENDAR)\|.*|📍\s*(?:ORIGEM|ENDERECO)\s*\|.*/g;
 
 export async function tryCriarAgendamento(
   aiResponse: string,
@@ -344,6 +345,26 @@ export function extractOrigem(aiResponse: string): string | null {
   const match = aiResponse.match(ORIGEM_REGEX);
   if (!match) return null;
   return match[1].trim();
+}
+
+export function extrairEndereco(aiResponse: string): string | null {
+  const match = aiResponse.match(ENDERECO_REGEX);
+  if (!match) return null;
+  return match[1].trim();
+}
+
+export async function salvarEndereco(
+  remoteJid: string,
+  accountId: string,
+  endereco: string
+) {
+  const phoneStr = remoteJid.replace(/[^0-9]/g, "").slice(0, 11);
+  await db
+    .from("clientes")
+    .update({ endereco })
+    .eq("user_id", accountId)
+    .eq("telefone", phoneStr);
+  console.log(`📍 Endereço salvo para ${phoneStr}: "${endereco}"`);
 }
 
 export async function salvarOrigem(

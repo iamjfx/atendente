@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Trash2 } from "lucide-react";
 import type { Appointment, AppointmentFormData, AppointmentStatus } from "@/types/appointment";
 import { statusLabels } from "@/lib/statusHelpers";
+import { formatPhoneBR } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface Props {
   open: boolean;
@@ -47,7 +49,7 @@ export default function AppointmentSheet({
     if (appointment) {
       setForm({
         cliente_nome: appointment.cliente_nome,
-        telefone: appointment.telefone ?? "",
+        telefone: formatPhoneBR(appointment.telefone ?? ""),
         data: appointment.data,
         hora_inicio: appointment.hora_inicio,
         hora_fim: appointment.hora_fim,
@@ -87,8 +89,12 @@ export default function AppointmentSheet({
 
   const handleDelete = async () => {
     if (!appointment?.id) return;
-    await onDelete(appointment.id);
-    onOpenChange(false);
+    try {
+      await onDelete(appointment.id);
+      onOpenChange(false);
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao excluir agendamento.");
+    }
   };
 
   return (

@@ -110,6 +110,9 @@ function buildSystemPrompt(
 - Informações a coletar (obrigatório antes de agendar): ${collectFields.join(", ")}.
 - NÃO pergunte o telefone — o número do cliente já está disponível automaticamente pelo WhatsApp.
 - ATENÇÃO: o endereço do cliente é OBRIGATÓRIO para realizar o agendamento. Se o cliente ainda não informou o endereço completo (rua, número, bairro, cidade), pergunte antes de sugerir horários.
+- Após coletar o endereço completo do cliente, inclua no final da resposta:
+📍 ENDERECO|rua, número, bairro, cidade, UF
+Exemplo: 📍 ENDERECO|Rua das Flores, 123, Centro, São Paulo, SP
 - Após CONFIRMAR o agendamento, SEMPRE pergunte ao cliente como ele conheceu a empresa (ex: "Joel, mais uma coisa: como você conheceu a Controle Total?"). Inclua a resposta no final como:
 📍 ORIGEM|resposta_do_cliente
 Exemplo: 📍 ORIGEM|Indicação de amigo

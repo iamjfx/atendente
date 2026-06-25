@@ -1,6 +1,6 @@
 import { generateResponse, IaConfig, BusinessHours, ServicoCatalogo, ProductTier } from "../../lib/gemini.js";
 import { sendAndStore } from "./media.js";
-import { tryCriarAgendamento, tryCancelarAgendamento, tryReagendarAgendamento, notificarDono, sendPerguntaOrigem, extractOrigem, salvarOrigem, ALL_MARKERS } from "./agendamento.js";
+import { tryCriarAgendamento, tryCancelarAgendamento, tryReagendarAgendamento, notificarDono, sendPerguntaOrigem, extractOrigem, salvarOrigem, extrairEndereco, salvarEndereco, ALL_MARKERS } from "./agendamento.js";
 import { checkAndRegisterLead } from "../leadQualificator.js";
 
 const FALLBACK_RESPONSE = "Poxa, tive uma instabilidade aqui! Pode me explicar de novo o que precisa? 😊";
@@ -74,6 +74,12 @@ export async function processWithAi(
     await sendAndStore(instanceRecord, remoteJid, conversationId, confirmacao, true);
     notificarDono(instanceRecord, agendamento, remoteJid, pushName);
     sendPerguntaOrigem({ ...instanceRecord, businessName: instanceRecord.businessName }, remoteJid, pushName);
+  }
+
+  // Extrai endereço do marcador na resposta da IA
+  const endereco = extrairEndereco(aiResponse);
+  if (endereco) {
+    salvarEndereco(remoteJid, instanceRecord.account_id, endereco);
   }
 
   // Extrai origem do marcador na resposta da IA
