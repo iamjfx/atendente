@@ -21,6 +21,11 @@ const ALLOWED_TABLES = [
   "clientes",
 ];
 
+const TABLES_WITH_USER_ID = new Set([
+  "agendamentos", "clientes", "conversations", "evolution_instances",
+  "ia_configs", "business_hours", "servicos_catalogo", "orcamentos", "leads",
+]);
+
 function validateTable(table: string): string | null {
   if (!ALLOWED_TABLES.includes(table)) {
     return `Table "${table}" is not allowed`;
@@ -37,6 +42,11 @@ router.get("/:table", authMiddleware, async (req: AuthenticatedRequest, res: Res
 
   try {
     let query = db.from(table).select("*");
+
+    // Filtro automático pelo user_id do token (igual ao Controle Total)
+    if (TABLES_WITH_USER_ID.has(table)) {
+      query = query.eq("user_id", req.user.id);
+    }
 
     for (const [col, val] of Object.entries(req.query)) {
       if (["single", "limit", "order"].includes(col)) continue;
