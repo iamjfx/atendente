@@ -23,7 +23,7 @@ export default function WeekTimeline({ currentDate, appointments, onSelectAppoin
 
   const getAptsForDay = (day: Date) =>
     appointments.filter((a) => {
-      const d = parse(a.data, "yyyy-MM-dd", new Date());
+      const d = parse((a.data || "").split("T")[0], "yyyy-MM-dd", new Date());
       return isSameDay(d, day);
     });
 

@@ -18,7 +18,7 @@ export default function DayTimeline({ selectedDate, appointments, onSelectAppoin
   const dayApts = useMemo(
     () =>
       appointments.filter((a) => {
-        const aptDate = parse(a.data, "yyyy-MM-dd", new Date());
+        const aptDate = parse((a.data || "").split("T")[0], "yyyy-MM-dd", new Date());
         return isSameDay(aptDate, selectedDate) && a.status !== "cancelled" && a.status !== "completed";
       }),
     [appointments, selectedDate]
@@ -27,7 +27,7 @@ export default function DayTimeline({ selectedDate, appointments, onSelectAppoin
   const completedApts = useMemo(
     () =>
       appointments.filter((a) => {
-        const aptDate = parse(a.data, "yyyy-MM-dd", new Date());
+        const aptDate = parse((a.data || "").split("T")[0], "yyyy-MM-dd", new Date());
         return isSameDay(aptDate, selectedDate) && (a.status === "cancelled" || a.status === "completed");
       }),
     [appointments, selectedDate]

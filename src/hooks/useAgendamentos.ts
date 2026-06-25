@@ -26,7 +26,7 @@ function rowToAppointment(row: Record<string, unknown>): Appointment {
     telefone: row.telefone as string | null,
     email: row.email as string | null,
     endereco: row.endereco as Record<string, unknown> | null,
-    data: row.data as string,
+    data: (row.data as string).split("T")[0],
     hora_inicio: row.hora_inicio as string,
     hora_fim: row.hora_fim as string,
     servico: row.servico as string,
