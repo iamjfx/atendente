@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { handleIncomingMessage } from "../services/messageHandler.js";
+import { handleIncomingMessage } from "../services/messageHandler/index.js";
 import { db } from "../lib/db.js";
 
 const router = Router();

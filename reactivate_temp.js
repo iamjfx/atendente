@@ -1,16 +1,21 @@
 import postgres from "postgres";
+import "dotenv/config";
 
-const PASSWORD = "Wukhoh-miqxim-simhu6";
-const PROJECT_REF = "zmjimlpcnsszxoebjdhd";
+const PASSWORD = process.env.SUPABASE_DB_PASSWORD;
+const PROJECT_REF = process.env.SUPABASE_PROJECT_REF;
+
+if (!PASSWORD || !PROJECT_REF) {
+  console.error("Configure SUPABASE_DB_PASSWORD e SUPABASE_PROJECT_REF no .env");
+  process.exit(1);
+}
+
 const host = `aws-0-sa-east-1.pooler.supabase.com`;
 const port = 6543;
 const user = `postgres.${PROJECT_REF}`;
 const database = "postgres";
 
 const sql = postgres({
-  host,
-  port,
-  user,
+  host, port, user,
   password: PASSWORD,
   database,
   ssl: { rejectUnauthorized: false },

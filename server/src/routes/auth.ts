@@ -1,22 +1,21 @@
 import { Router, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import pg from "pg";
-import { db } from "../lib/db.js";
+import { db, pool } from "../lib/db.js";
 import { config } from "../config.js";
 
 const router = Router();
 
-const { Pool } = pg;
-const pool = new Pool({
-  user: process.env.DB_USER || "postgres",
-  host: process.env.DB_HOST || "localhost",
-  database: process.env.DB_NAME || "controletotal",
-  password: process.env.DB_PASSWORD || "Wukhoh-miqxim-simhu6",
-  port: parseInt(process.env.DB_PORT || "5432"),
-});
+if (!process.env.DB_PASSWORD) {
+  console.error('ERRO CRÍTICO: DB_PASSWORD não definido. Configure a variável de ambiente.');
+  process.exit(1);
+}
+if (!process.env.JWT_SECRET) {
+  console.error('ERRO CRÍTICO: JWT_SECRET não definido. Configure a variável de ambiente.');
+  process.exit(1);
+}
 
-const JWT_SECRET = process.env.JWT_SECRET || "chave_secreta_jwt_producao_erp";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 router.post("/login", async (req, res: Response) => {
   const { email, password } = req.body;

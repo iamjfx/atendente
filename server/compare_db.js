@@ -1,19 +1,30 @@
 import pg from 'pg';
+import "dotenv/config";
+
+const SUPABASE_DB_PASSWORD = process.env.SUPABASE_DB_PASSWORD;
+const SUPABASE_PROJECT_REF = process.env.SUPABASE_PROJECT_REF;
+const VPS_DB_PASSWORD = process.env.VPS_DB_PASSWORD;
+const VPS_HOST = process.env.VPS_HOST;
+
+if (!SUPABASE_DB_PASSWORD || !SUPABASE_PROJECT_REF || !VPS_DB_PASSWORD || !VPS_HOST) {
+  console.error("Configure SUPABASE_DB_PASSWORD, SUPABASE_PROJECT_REF, VPS_DB_PASSWORD e VPS_HOST no .env");
+  process.exit(1);
+}
 
 const supabaseConfig = {
   host: 'aws-0-sa-east-1.pooler.supabase.com',
   port: 5432,
-  user: 'postgres.mruoqycgsfxdhogehztx',
-  password: 'Wukhoh-miqxim-simhu6',
+  user: `postgres.${SUPABASE_PROJECT_REF}`,
+  password: SUPABASE_DB_PASSWORD,
   database: 'postgres',
   ssl: { rejectUnauthorized: false }
 };
 
 const vpsConfig = {
-  host: '187.127.12.245',
+  host: VPS_HOST,
   port: 5432,
   user: 'postgres',
-  password: 'Wukhoh-miqxim-simhu6',
+  password: VPS_DB_PASSWORD,
   database: 'controletotal',
   ssl: false
 };
@@ -37,7 +48,7 @@ async function getRowCount(client, schema, table) {
     const res = await client.query(`SELECT COUNT(*) as count FROM "${schema}"."${table}"`);
     return parseInt(res.rows[0].count, 10);
   } catch (err) {
-    return -1; // Indicates table might not exist or error
+    return -1;
   }
 }
 
@@ -55,20 +66,19 @@ async function run() {
     console.log("Connected to VPS.");
 
     const sbTables = await getTables(supabaseClient);
-    
+
     console.log("\nComparing row counts between Supabase and VPS:\n");
     console.log(String("Table").padEnd(35) + " | " + "Supabase".padStart(10) + " | " + "VPS".padStart(10) + " | " + "Status");
     console.log("-".repeat(70));
 
     for (const t of sbTables) {
-      // Skip some native supabase tables if we get permission errors or if they are irrelevant
       if (t.table_schema === 'auth' && !['users', 'identities', 'sessions'].includes(t.table_name)) {
         continue;
       }
       if (t.table_name.startsWith('flow_') || t.table_name.startsWith('schema_') || t.table_name === 'decrypted_secrets') {
         continue;
       }
-      
+
       const fullname = `${t.table_schema}.${t.table_name}`;
       const sbCount = await getRowCount(supabaseClient, t.table_schema, t.table_name);
       const vpsCount = await getRowCount(vpsClient, t.table_schema, t.table_name);

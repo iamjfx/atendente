@@ -4,15 +4,24 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'chave_secreta_jwt_producao_erp';
+if (!process.env.JWT_SECRET) {
+  console.error('ERRO CRÍTICO: JWT_SECRET não definido. Configure a variável de ambiente.');
+  process.exit(1);
+}
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const { Pool } = pg;
 
-const pool = new Pool({
+if (!process.env.DB_PASSWORD) {
+  console.error('ERRO CRÍTICO: DB_PASSWORD não definido. Configure a variável de ambiente.');
+  process.exit(1);
+}
+
+export const pool = new Pool({
   user: process.env.DB_USER || 'postgres',
   host: process.env.DB_HOST || 'localhost',
   database: process.env.DB_NAME || 'controletotal',
-  password: process.env.DB_PASSWORD || 'Wukhoh-miqxim-simhu6',
+  password: process.env.DB_PASSWORD,
   port: parseInt(process.env.DB_PORT || '5432'),
 });
 

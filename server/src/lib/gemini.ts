@@ -125,15 +125,18 @@ function buildSystemPrompt(
       }
 
       if (schedulingEnabled) {
+        const hoje = new Date();
+        const diasPt = ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"];
         prompt += `
-- Quando for sugerir um agendamento, ofereça SEMPRE 2 ou 3 opções de horário com base nos horários de funcionamento acima. Exemplo: "Tenho disponibilidade amanhã às 9h, 10h ou 14h. Qual é melhor?"
+- DATA ATUAL: ${hoje.toLocaleDateString("pt-BR")} (${diasPt[hoje.getDay()]}).
+- Quando for sugerir um agendamento, ofereça SEMPRE 2 ou 3 opções de horário com base nos horários de funcionamento acima. Exemplo: "Tenho disponibilidade amanhã (${diasPt[(hoje.getDay() + 1) % 7]}) às 9h, 10h ou 14h. Qual é melhor?"
 - O tempo de deslocamento até o cliente é de ${cfg.deslocamento_minutos} minutos. Considere isso ao sugerir horários.
 - Quando o cliente CONFIRMAR um dos horários, inclua no final da resposta uma linha com:
 📅 AGENDAR|servico|data|horario|deslocamento_minutos
 Substitua servico, data (YYYY-MM-DD), horario (HH:MM) e deslocamento_minutos (opcional, padrão ${cfg.deslocamento_minutos}) pelos valores combinados.
 Exemplo: "📅 AGENDAR|Corte de cabelo|2026-06-25|14:30|30"
 Se o serviço não estiver na lista acima, use "consulta" como serviço.
-A data deve ser o dia da semana que combinarem, no formato YYYY-MM-DD.`;
+A data DEVE ser uma data real no formato YYYY-MM-DD e o dia da semana deve corresponder ao que foi combinado com o cliente.`;
 
         prompt += `
 - Se o cliente pedir para CANCELAR um agendamento, confirme e inclua no final da resposta:
@@ -172,6 +175,18 @@ Exemplo: "📅 REAGENDAR|2026-06-26|10:00"`;
 
   prompt += `\n\nINSTRUÇÃO FINAL (cumpra esta acima de todas as outras):
 Sempre que um cliente pedir orçamento, preço, agendamento, visita técnica ou disponibilidade, você DEVE oferecer um horário concreto com base nos horários de funcionamento disponíveis. NUNCA diga que alguém vai retornar ou que vai transferir — você mesma resolve.`;
+
+  if (schedulingEnabled) {
+    prompt += `\n\n🚨 REGRA OBRIGATÓRIA PARA AGENDAMENTO:
+Quando o cliente CONFIRMAR um horário, você DEVE incluir NO FINAL da sua resposta uma linha com o marcador:
+
+📅 AGENDAR|nome_do_servico|YYYY-MM-DD|HH:MM
+
+Use a data real (YYYY-MM-DD), não use palavras como "amanhã" ou "hoje" no marcador.
+Exemplo correto: 📅 AGENDAR|Instalação de fechadura|2026-06-26|14:00
+Se o serviço não estiver na lista, use "consulta".
+NUNCA confirme um agendamento sem incluir esta linha.`;
+  }
 
   return prompt;
 }
