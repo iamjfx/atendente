@@ -144,44 +144,44 @@ export default function Index() {
 
     setProgress(rawProgress);
 
+    const isMobile = window.innerWidth < 768;
+
+    // Batch: pre-calcula todos os rects dos slots pra evitar layout thrashing
+    const slotRects: { x: number; y: number }[] = messages.map((_, i) => {
+      const slot = slotRefs.current[i];
+      if (!slot) return { x: 0, y: 0 };
+      const r = slot.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    });
+
+    const now = performance.now();
+
     messages.forEach((_msg, i) => {
       const bubble = bubbleRefs.current[i];
       if (!bubble) return;
 
-      const slot = slotRefs.current[i];
-
       const startX = (heroPositions[i].left / 100) * windowW;
-      let startY = (heroPositions[i].top / 100) * windowH;
+      const startY = (heroPositions[i].top / 100) * windowH - (isMobile ? 44 : 0);
 
-      // Mobile: ajusta posicao inicial para compensar header fixo
-      if (window.innerWidth < 768) {
-        startY -= 44;
-      }
-
-      let endX = startX;
-      let endY = startY + 200;
-      if (slot) {
-        const r = slot.getBoundingClientRect();
-        endX = r.left + r.width / 2;
-        endY = r.top + r.height / 2;
-      }
+      const slotRect = slotRects[i];
+      const endX = slotRect.x || startX;
+      const endY = slotRect.y || (startY + 200);
 
       const x = startX + (endX - startX) * p;
       const y = startY + (endY - startY) * p;
       const base = depthScales[i];
       const scale = base + (0.65 - base) * Math.min(1, p * 1.8);
-
       const floatAmt = Math.max(0, 1 - p * 2);
-      const floatPhase = Math.sin(performance.now() / 800 * (2 + i * 0.15) + i * 1.2);
+      const floatPhase = Math.sin(now / 800 * (2 + i * 0.15) + i * 1.2);
       const floatX = floatOffsets[i].x * floatAmt * floatPhase;
       const floatY = floatOffsets[i].y * floatAmt * floatPhase;
-
       const rot = rotVals[i] * Math.max(0, 1 - p * 1.5);
       const finalX = x + floatX;
       const finalY = y + floatY;
 
       bubble.style.transform = `translate(-50%,-50%) translate(${finalX}px,${finalY}px) rotate(${rot}deg) scale(${scale})`;
-      bubble.style.opacity = String(1 - Math.max(0, Math.min(1, (rawProgress - 0.6) / 0.15)));
+      // Sincroniza fade: bolhas somem enquanto cards aparecem (rawProgress 0.5-0.8)
+      bubble.style.opacity = String(1 - Math.max(0, Math.min(1, (rawProgress - 0.5) / 0.3)));
     });
 
     const wordWindows = [
@@ -210,6 +210,19 @@ export default function Index() {
   }, []);
 
   useEffect(() => {
+    // Define posição inicial das bolhas antes da animação começar
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const isMobile = w < 768;
+    messages.forEach((_, i) => {
+      const bubble = bubbleRefs.current[i];
+      if (!bubble) return;
+      const sx = (heroPositions[i].left / 100) * w;
+      const sy = (heroPositions[i].top / 100) * h - (isMobile ? 44 : 0);
+      bubble.style.transform = `translate(-50%,-50%) translate(${sx}px,${sy}px) scale(${depthScales[i]})`;
+      bubble.style.opacity = "1";
+    });
+
     rafRef.current = requestAnimationFrame(updatePositions);
     return () => cancelAnimationFrame(rafRef.current);
   }, [updatePositions]);
