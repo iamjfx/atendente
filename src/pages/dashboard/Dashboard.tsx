@@ -342,10 +342,11 @@ export default function Dashboard() {
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="w-6 h-6 rounded-full bg-[#25D366]/10 flex items-center justify-center hover:bg-[#25D366]/20 transition-colors shrink-0"
+                        className="flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg bg-[#25D366]/10 hover:bg-[#25D366]/20 transition-colors shrink-0"
                         title="Falar no WhatsApp"
                       >
-                        <MessageCircle className="w-3.5 h-3.5 text-[#25D366]" />
+                        <MessageCircle className="w-4 h-4 text-[#25D366]" />
+                        <span className="text-[9px] font-semibold text-[#25D366] leading-none">ZAP</span>
                       </a>
                     ) : null;
                   })()}
