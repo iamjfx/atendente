@@ -37,4 +37,10 @@ export interface AppointmentFormData {
   observacoes: string;
   status: AppointmentStatus;
   tipo: AppointmentTipo;
+  endereco: string;
+  rua: string;
+  numero: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
 }

@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { Loader2, Trash2, MapPin, ExternalLink } from "lucide-react";
 import type { Appointment, AppointmentFormData, AppointmentStatus } from "@/types/appointment";
 import { statusLabels } from "@/lib/statusHelpers";
@@ -34,6 +35,7 @@ export default function AppointmentSheet({
   const isNew = !appointment?.id;
   const [saving, setSaving] = useState(false);
   const [endereco, setEndereco] = useState<string | null>(null);
+  const [loadingEndereco, setLoadingEndereco] = useState(false);
   const [form, setForm] = useState<AppointmentFormData>({
     cliente_nome: "",
     telefone: "",
@@ -43,6 +45,12 @@ export default function AppointmentSheet({
     servico: "",
     valor: 0,
     observacoes: "",
+    endereco: "",
+    rua: "",
+    numero: "",
+    bairro: "",
+    cidade: "",
+    uf: "",
     status: "pending",
     tipo: "agendado",
   });
@@ -58,9 +66,16 @@ export default function AppointmentSheet({
         servico: appointment.servico,
         valor: appointment.valor,
         observacoes: appointment.observacoes ?? "",
+        endereco: "",
+        rua: "",
+        numero: "",
+        bairro: "",
+        cidade: "",
+        uf: "",
         status: appointment.status,
         tipo: appointment.tipo,
       });
+      loadClienteData();
     } else {
       setForm({
         cliente_nome: "",
@@ -71,33 +86,49 @@ export default function AppointmentSheet({
         servico: "",
         valor: 0,
         observacoes: "",
+        endereco: "",
+        rua: "",
+        numero: "",
+        bairro: "",
+        cidade: "",
+        uf: "",
         status: "pending",
         tipo: "agendado",
       });
+      setEndereco(null);
     }
   }, [appointment, defaultDate, defaultTime, open]);
 
-  // Carrega endereço do cliente
-  useEffect(() => {
-    if (isNew || !appointment?.cliente_id) {
+  async function loadClienteData() {
+    if (!appointment?.cliente_id) {
       setEndereco(null);
       return;
     }
+    setLoadingEndereco(true);
     setEndereco(null);
-    db.from("clientes")
+    const { data }: any = await db
+      .from("clientes")
       .select("endereco, rua, numero, bairro, cidade, uf")
       .eq("id", appointment.cliente_id)
-      .maybeSingle()
-      .then(({ data }: any) => {
-        if (data) {
-          const completo =
-            data.endereco ||
-            [data.rua, data.numero, data.bairro, data.cidade, data.uf]
-              .filter(Boolean).join(", ");
-          setEndereco(completo || null);
-        }
-      });
-  }, [isNew, appointment?.cliente_id, open]);
+      .maybeSingle();
+    if (data) {
+      const completo =
+        data.endereco ||
+        [data.rua, data.numero, data.bairro, data.cidade, data.uf]
+          .filter(Boolean).join(", ");
+      setEndereco(completo || null);
+      setForm((f) => ({
+        ...f,
+        endereco: data.endereco || "",
+        rua: data.rua || "",
+        numero: data.numero || "",
+        bairro: data.bairro || "",
+        cidade: data.cidade || "",
+        uf: data.uf || "",
+      }));
+    }
+    setLoadingEndereco(false);
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -220,6 +251,72 @@ export default function AppointmentSheet({
               value={form.valor}
               onChange={(e) => setForm({ ...form, valor: Number(e.target.value) })}
             />
+          </div>
+
+          <Separator />
+          <p className="text-xs font-semibold text-muted-foreground">Endereço do cliente</p>
+
+          <div className="space-y-2">
+            <Label htmlFor="endereco">Endereço completo</Label>
+            <Input
+              id="endereco"
+              value={form.endereco}
+              onChange={(e) => setForm({ ...form, endereco: e.target.value })}
+              placeholder="Rua, número, bairro, cidade, UF"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="rua">Rua</Label>
+              <Input
+                id="rua"
+                value={form.rua}
+                onChange={(e) => setForm({ ...form, rua: e.target.value })}
+                placeholder="Rua"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="numero">Número</Label>
+              <Input
+                id="numero"
+                value={form.numero}
+                onChange={(e) => setForm({ ...form, numero: e.target.value })}
+                placeholder="Nº"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="bairro">Bairro</Label>
+              <Input
+                id="bairro"
+                value={form.bairro}
+                onChange={(e) => setForm({ ...form, bairro: e.target.value })}
+                placeholder="Bairro"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cidade">Cidade</Label>
+              <Input
+                id="cidade"
+                value={form.cidade}
+                onChange={(e) => setForm({ ...form, cidade: e.target.value })}
+                placeholder="Cidade"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="uf">UF</Label>
+              <Input
+                id="uf"
+                value={form.uf}
+                onChange={(e) => setForm({ ...form, uf: e.target.value })}
+                placeholder="UF"
+                maxLength={2}
+                className="w-20"
+              />
+            </div>
           </div>
 
           <div className="space-y-2">

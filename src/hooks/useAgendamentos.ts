@@ -69,6 +69,51 @@ export function useAgendamentos() {
     load();
   }, [load]);
 
+  async function salvarEnderecoCliente(
+    apt: any,
+    userId: string,
+    _agendamentoId?: string
+  ) {
+    const telefone = (apt.telefone || "").replace(/\D/g, "").replace(/^55/, "");
+    if (!telefone) return;
+
+    // Verifica se endereço foi preenchido
+    const endereco =
+      apt.endereco ||
+      [apt.rua, apt.numero, apt.bairro, apt.cidade, apt.uf]
+        .filter(Boolean).join(", ");
+
+    if (!endereco && !apt.rua && !apt.bairro && !apt.cidade) return;
+
+    // Busca ou cria cliente
+    const { data: existente } = await db
+      .from("clientes")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("telefone", telefone)
+      .maybeSingle();
+
+    const payload: Record<string, any> = {
+      endereco: endereco || null,
+      rua: apt.rua || null,
+      numero: apt.numero || null,
+      bairro: apt.bairro || null,
+      cidade: apt.cidade || null,
+      uf: apt.uf || null,
+    };
+
+    if (existente) {
+      await db.from("clientes").update(payload).eq("id", existente.id);
+    } else {
+      await db.from("clientes").insert({
+        ...payload,
+        user_id: userId,
+        nome: apt.cliente_nome || "Cliente",
+        telefone,
+      });
+    }
+  }
+
   const save = async (apt: Partial<Appointment> & Pick<Appointment, "cliente_nome" | "data" | "hora_inicio" | "hora_fim" | "servico">) => {
     const isNew = !apt.id;
 
@@ -102,6 +147,8 @@ export function useAgendamentos() {
       if (data) {
         setAppointments((prev) => [...prev, rowToAppointment(data)].sort(sortAppointments));
       }
+      // Salva endereço no cliente após criar agendamento
+      await salvarEnderecoCliente(apt, user.user.id, data?.id);
     } else {
       const { data, error } = await db
         .from("agendamentos")
@@ -128,6 +175,11 @@ export function useAgendamentos() {
         setAppointments((prev) =>
           prev.map((a) => (a.id === apt.id ? rowToAppointment(data) : a))
         );
+      }
+      // Salva endereço no cliente após atualizar agendamento
+      const { data: user } = await db.auth.getUser();
+      if (user?.user) {
+        await salvarEnderecoCliente(apt, user.user.id, data?.id);
       }
     }
   };
