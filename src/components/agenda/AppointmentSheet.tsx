@@ -188,46 +188,71 @@ export default function AppointmentSheet({
           </SheetDescription>
         </SheetHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="cliente_nome">Cliente *</Label>
-            <Input
-              id="cliente_nome"
-              value={form.cliente_nome}
-              onChange={(e) => setForm({ ...form, cliente_nome: e.target.value })}
-              placeholder="Nome do cliente"
-              required
-            />
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label htmlFor="cliente_nome" className="text-xs">Cliente *</Label>
+              <Input
+                id="cliente_nome"
+                value={form.cliente_nome}
+                onChange={(e) => setForm({ ...form, cliente_nome: e.target.value })}
+                placeholder="Nome"
+                required
+                className="h-8 text-xs"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="telefone" className="text-xs">Telefone</Label>
+              <Input
+                id="telefone"
+                value={form.telefone}
+                onChange={(e) => setForm({ ...form, telefone: e.target.value })}
+                placeholder="(11) 99999-9999"
+                className="h-8 text-xs"
+              />
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="telefone">Telefone</Label>
-            <Input
-              id="telefone"
-              value={form.telefone}
-              onChange={(e) => setForm({ ...form, telefone: e.target.value })}
-              placeholder="(11) 99999-9999"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="data">Data *</Label>
+          <div className="grid grid-cols-4 gap-2">
+            <div className="space-y-1">
+              <Label htmlFor="data" className="text-xs">Data *</Label>
               <Input
                 id="data"
                 type="date"
                 value={form.data}
                 onChange={(e) => setForm({ ...form, data: e.target.value })}
                 required
+                className="h-8 text-xs"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="tipo">Tipo</Label>
+            <div className="space-y-1">
+              <Label htmlFor="hora_inicio" className="text-xs">Início *</Label>
+              <Input
+                id="hora_inicio"
+                type="time"
+                value={form.hora_inicio}
+                onChange={(e) => setForm({ ...form, hora_inicio: e.target.value })}
+                required
+                className="h-8 text-xs"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="hora_fim" className="text-xs">Fim</Label>
+              <Input
+                id="hora_fim"
+                type="time"
+                value={form.hora_fim}
+                onChange={(e) => setForm({ ...form, hora_fim: e.target.value })}
+                className="h-8 text-xs"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="tipo" className="text-xs">Tipo</Label>
               <select
                 id="tipo"
                 value={form.tipo}
                 onChange={(e) => setForm({ ...form, tipo: e.target.value as "agendado" | "imediato" })}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="h-8 text-xs w-full rounded-md border border-input bg-background px-2"
               >
                 <option value="agendado">Agendado</option>
                 <option value="imediato">Imediato</option>
@@ -235,147 +260,131 @@ export default function AppointmentSheet({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="hora_inicio">Início *</Label>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label htmlFor="servico" className="text-xs">Serviço</Label>
               <Input
-                id="hora_inicio"
-                type="time"
-                value={form.hora_inicio}
-                onChange={(e) => setForm({ ...form, hora_inicio: e.target.value })}
-                required
+                id="servico"
+                value={form.servico}
+                onChange={(e) => setForm({ ...form, servico: e.target.value })}
+                placeholder="Ex: Consulta"
+                className="h-8 text-xs"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="hora_fim">Fim</Label>
+            <div className="space-y-1">
+              <Label htmlFor="valor" className="text-xs">Valor (R$)</Label>
               <Input
-                id="hora_fim"
-                type="time"
-                value={form.hora_fim}
-                onChange={(e) => setForm({ ...form, hora_fim: e.target.value })}
+                id="valor"
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.valor}
+                onChange={(e) => setForm({ ...form, valor: Number(e.target.value) })}
+                className="h-8 text-xs"
               />
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="servico">Serviço</Label>
-            <Input
-              id="servico"
-              value={form.servico}
-              onChange={(e) => setForm({ ...form, servico: e.target.value })}
-              placeholder="Ex: Consulta, Corte, Massagem..."
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="valor">Valor (R$)</Label>
-            <Input
-              id="valor"
-              type="number"
-              step="0.01"
-              min="0"
-              value={form.valor}
-              onChange={(e) => setForm({ ...form, valor: Number(e.target.value) })}
-            />
           </div>
 
           <Separator />
-          <p className="text-xs font-semibold text-muted-foreground">Endereço do cliente</p>
+          <p className="text-[10px] font-semibold text-muted-foreground">Endereço do cliente</p>
 
-          <div className="space-y-2">
-            <Label htmlFor="cep">CEP</Label>
-            <div className="relative">
-              <Input
-                id="cep"
-                value={form.cep}
-                onChange={(e) => {
-                  const digits = e.target.value.replace(/\D/g, "").slice(0, 8);
-                  const masked = digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
-                  setForm({ ...form, cep: masked });
-                  if (digits.length === 8) buscarCEP(digits);
-                }}
-                placeholder="00000-000"
-                maxLength={9}
-                className="w-36"
-              />
-              {buscaCep && (
-                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
-              )}
+          <div className="grid grid-cols-4 gap-2">
+            <div className="col-span-2 space-y-1">
+              <Label htmlFor="cep" className="text-xs">CEP</Label>
+              <div className="relative">
+                <Input
+                  id="cep"
+                  value={form.cep}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, "").slice(0, 8);
+                    const masked = digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
+                    setForm({ ...form, cep: masked });
+                    if (digits.length === 8) buscarCEP(digits);
+                  }}
+                  placeholder="00000-000"
+                  maxLength={9}
+                  className="h-8 text-xs"
+                />
+                {buscaCep && (
+                  <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 animate-spin text-muted-foreground" />
+                )}
+              </div>
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="rua">Rua</Label>
+            <div className="space-y-1">
+              <Label htmlFor="rua" className="text-xs">Rua</Label>
               <Input
                 id="rua"
                 value={form.rua}
                 onChange={(e) => setForm({ ...form, rua: e.target.value })}
                 placeholder="Rua"
+                className="h-8 text-xs"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="numero">Número</Label>
+            <div className="space-y-1">
+              <Label htmlFor="numero" className="text-xs">Nº</Label>
               <Input
                 id="numero"
                 value={form.numero}
                 onChange={(e) => setForm({ ...form, numero: e.target.value })}
                 placeholder="Nº"
+                className="h-8 text-xs"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="bairro">Bairro</Label>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="space-y-1">
+              <Label htmlFor="bairro" className="text-xs">Bairro</Label>
               <Input
                 id="bairro"
                 value={form.bairro}
                 onChange={(e) => setForm({ ...form, bairro: e.target.value })}
                 placeholder="Bairro"
+                className="h-8 text-xs"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="cidade">Cidade</Label>
+            <div className="space-y-1">
+              <Label htmlFor="cidade" className="text-xs">Cidade</Label>
               <Input
                 id="cidade"
                 value={form.cidade}
                 onChange={(e) => setForm({ ...form, cidade: e.target.value })}
                 placeholder="Cidade"
+                className="h-8 text-xs"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="uf">UF</Label>
+            <div className="space-y-1">
+              <Label htmlFor="uf" className="text-xs">UF</Label>
               <Input
                 id="uf"
                 value={form.uf}
                 onChange={(e) => setForm({ ...form, uf: e.target.value })}
                 placeholder="UF"
                 maxLength={2}
-                className="w-20"
+                className="h-8 text-xs w-14"
               />
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="observacoes">Observações</Label>
+          <div className="space-y-1">
+            <Label htmlFor="observacoes" className="text-xs">Observações</Label>
             <textarea
               id="observacoes"
               value={form.observacoes}
               onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
-              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              placeholder="Observações sobre o agendamento..."
+              className="flex min-h-[52px] w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              placeholder="Observações..."
             />
           </div>
 
           {endereco && (
-            <div className="space-y-2 p-3 rounded-lg bg-muted/50 border border-border/40">
-              <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5" />
+            <div className="p-2 rounded-lg bg-muted/50 border border-border/40">
+              <p className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1 mb-1">
+                <MapPin className="w-3 h-3" />
                 Endereço do cliente
               </p>
-              <p className="text-sm">{endereco}</p>
-              <div className="flex flex-wrap gap-2 mt-2">
+              <p className="text-xs mb-2">{endereco}</p>
+              <div className="flex flex-wrap gap-1.5">
                 {[
                   { label: "Waze", url: `https://waze.com/ul?q=${encodeURIComponent(endereco)}` },
                   { label: "Google Maps", url: `https://maps.google.com/?q=${encodeURIComponent(endereco)}` },
@@ -386,9 +395,9 @@ export default function AppointmentSheet({
                     href={m.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                    className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                   >
-                    <ExternalLink className="w-3 h-3" />
+                    <ExternalLink className="w-2.5 h-2.5" />
                     {m.label}
                   </a>
                 ))}
@@ -397,15 +406,15 @@ export default function AppointmentSheet({
           )}
 
           {!isNew && (
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <div className="flex flex-wrap gap-2">
+            <div className="space-y-1">
+              <Label className="text-xs">Status</Label>
+              <div className="flex flex-wrap gap-1.5">
                 {(["pending", "confirmed", "completed", "cancelled"] as AppointmentStatus[]).map((s) => (
                   <button
                     key={s}
                     type="button"
                     onClick={() => onStatusChange(appointment.id, s)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${
                       form.status === s
                         ? "bg-primary text-primary-foreground border-primary"
                         : "bg-background text-muted-foreground border-border hover:bg-accent"
@@ -418,20 +427,20 @@ export default function AppointmentSheet({
             </div>
           )}
 
-          <div className="flex items-center gap-2 pt-4 border-t border-border">
-            <Button type="submit" size="sm" className="rounded-full" disabled={saving}>
-              {saving && <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />}
-              {isNew ? "Criar Agendamento" : "Salvar Alterações"}
+          <div className="flex items-center gap-2 pt-3 border-t border-border">
+            <Button type="submit" size="sm" className="rounded-full h-8 text-xs" disabled={saving}>
+              {saving && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
+              {isNew ? "Criar" : "Salvar"}
             </Button>
             {!isNew && (
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                className="rounded-full text-destructive ml-auto"
+                className="rounded-full text-destructive ml-auto h-8 text-xs"
                 onClick={handleDelete}
               >
-                <Trash2 className="w-3.5 h-3.5 mr-1" />
+                <Trash2 className="w-3 h-3 mr-1" />
                 Excluir
               </Button>
             )}

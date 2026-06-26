@@ -48,7 +48,10 @@ export default function DayTimeline({ selectedDate, appointments, onSelectAppoin
             {/* Half-hour slot click areas */}
             {[0, 1].map((half) => {
               const time = `${String(hour).padStart(2, "0")}:${half === 0 ? "00" : "30"}`;
-              return (
+  const now = new Date();
+  const currentHour = now.getHours() + now.getMinutes() / 60;
+
+  return (
                 <div
                   key={half}
                   className="absolute left-12 right-0 border-b border-border/30 cursor-pointer hover:bg-accent/30 transition-colors"
@@ -120,6 +123,16 @@ export default function DayTimeline({ selectedDate, appointments, onSelectAppoin
             </div>
           );
         })}
+
+        {/* Current time indicator */}
+        {currentHour >= 0 && currentHour < 24 && (
+          <div
+            className="absolute left-12 right-0 border-t-2 border-destructive z-10 pointer-events-none"
+            style={{ top: currentHour * 60 * (SLOT_HEIGHT / 30) }}
+          >
+            <div className="w-2 h-2 rounded-full bg-destructive -mt-1 -ml-1" />
+          </div>
+        )}
       </div>
     </div>
   );

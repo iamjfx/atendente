@@ -207,63 +207,63 @@ export default function Dashboard() {
         </button>
       </div>
 
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
+      <div className="grid gap-2 grid-cols-2 lg:grid-cols-4">
+        <Card className="py-3 px-4">
+          <CardHeader className="flex flex-row items-center justify-between p-0 pb-1">
+            <CardTitle className="text-[10px] font-medium text-muted-foreground">
               Conversas hoje
             </CardTitle>
-            <MessageCircle className="w-4 h-4 text-primary" />
+            <MessageCircle className="w-3 h-3 text-primary" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{status?.conversas_hoje ?? 0}</div>
+          <CardContent className="p-0">
+            <div className="text-lg font-bold">{status?.conversas_hoje ?? 0}</div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
+        <Card className="py-3 px-4">
+          <CardHeader className="flex flex-row items-center justify-between p-0 pb-1">
+            <CardTitle className="text-[10px] font-medium text-muted-foreground">
               Resolução IA
             </CardTitle>
-            <Brain className="w-4 h-4 text-violet-500" />
+            <Brain className="w-3 h-3 text-violet-500" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{status?.resolucao_ia ?? 0}%</div>
-            <p className="text-[10px] text-muted-foreground mt-0.5">
+          <CardContent className="p-0">
+            <div className="text-lg font-bold">{status?.resolucao_ia ?? 0}%</div>
+            <p className="text-[9px] text-muted-foreground">
               {status?.ia_messages_hoje ?? 0}/{status?.messages_hoje ?? 0} msgs
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
+        <Card className="py-3 px-4">
+          <CardHeader className="flex flex-row items-center justify-between p-0 pb-1">
+            <CardTitle className="text-[10px] font-medium text-muted-foreground">
               Pendentes
             </CardTitle>
-            <Users className="w-4 h-4 text-amber-500" />
+            <Users className="w-3 h-3 text-amber-500" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{status?.pendentes?.length ?? 0}</div>
+          <CardContent className="p-0">
+            <div className="text-lg font-bold">{status?.pendentes?.length ?? 0}</div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
+        <Card className="py-3 px-4">
+          <CardHeader className="flex flex-row items-center justify-between p-0 pb-1">
+            <CardTitle className="text-[10px] font-medium text-muted-foreground">
               WhatsApp
             </CardTitle>
             {apiError ? (
-              <AlertCircle className="w-4 h-4 text-amber-500" />
+              <AlertCircle className="w-3 h-3 text-amber-500" />
             ) : connected ? (
-              <Wifi className="w-4 h-4 text-green-500" />
+              <Wifi className="w-3 h-3 text-green-500" />
             ) : (
-              <WifiOff className="w-4 h-4 text-muted-foreground" />
+              <WifiOff className="w-3 h-3 text-muted-foreground" />
             )}
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold flex items-center gap-2">
+          <CardContent className="p-0">
+            <div className="text-lg font-bold flex items-center gap-1">
               {apiError ? (
-                <span className="text-amber-500 text-sm font-normal">Indisponível</span>
+                <span className="text-amber-500 text-xs font-normal">Indisponível</span>
               ) : connected ? (
                 <span className="text-green-500">Conectado</span>
               ) : (

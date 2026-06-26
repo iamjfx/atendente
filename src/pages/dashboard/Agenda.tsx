@@ -18,7 +18,7 @@ type ViewMode = "diaria" | "semanal" | "mensal";
 
 export default function Agenda() {
   const { appointments, loading, save, remove, setStatus, reload } = useAgendamentos();
-  const [viewMode, setViewMode] = useState<ViewMode>("semanal");
+  const [viewMode, setViewMode] = useState<ViewMode>("diaria");
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [statusFilter, setStatusFilter] = useState<AppointmentStatus | "all">("all");
@@ -74,57 +74,57 @@ export default function Agenda() {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-bold text-foreground">Agenda</h2>
-          <p className="text-sm text-muted-foreground">
-            {formatDate(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })}
+      {/* Header + View toggle combined */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-3">
+          <h2 className="text-sm font-bold text-foreground">Agenda</h2>
+          <p className="text-[11px] text-muted-foreground hidden sm:block">
+            {formatDate(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
           </p>
         </div>
-        <Button size="sm" className="rounded-full" onClick={() => openNew()}>
-          <Plus className="w-3.5 h-3.5 mr-1" />
-          Novo
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="flex bg-muted rounded-lg p-0.5 gap-0.5">
+            {(["diaria", "semanal", "mensal"] as ViewMode[]).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                className={`px-2 py-1 text-[10px] font-medium rounded-md transition-colors ${
+                  viewMode === mode ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {mode === "diaria" ? "Dia" : mode === "semanal" ? "Sem" : "Mês"}
+              </button>
+            ))}
+          </div>
+          <Button size="xs" className="rounded-full h-7 text-[11px]" onClick={() => openNew()}>
+            <Plus className="w-3 h-3 mr-0.5" />
+            Novo
+          </Button>
+        </div>
       </div>
 
-      {/* View toggle */}
-      <div className="flex items-center justify-between gap-2 overflow-x-auto">
-        <div className="flex bg-muted rounded-lg p-0.5 gap-0.5">
-          {(["diaria", "semanal", "mensal"] as ViewMode[]).map((mode) => (
-            <button
-              key={mode}
-              onClick={() => setViewMode(mode)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                viewMode === mode ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {mode === "diaria" ? "Dia" : mode === "semanal" ? "Semana" : "Mês"}
-            </button>
-          ))}
+      {/* Filters + Search (desktop) */}
+      <div className="hidden md:flex items-center gap-2">
+        <div className="relative">
+          <Filter className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as AppointmentStatus | "all")}
+            className="pl-7 pr-3 h-7 text-[11px] rounded-lg border border-input bg-background appearance-none cursor-pointer"
+          >
+            {statusFilterOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
         </div>
-        <div className="hidden md:flex items-center gap-2">
-          <div className="relative">
-            <Filter className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as AppointmentStatus | "all")}
-              className="pl-8 pr-3 h-8 text-xs rounded-lg border border-input bg-background appearance-none cursor-pointer"
-            >
-              {statusFilterOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-          </div>
-          <div className="relative">
-            <List className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-            <Input
-              placeholder="Buscar..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-8 h-8 text-xs w-40"
-            />
-          </div>
+        <div className="relative">
+          <List className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+          <Input
+            placeholder="Buscar..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-7 h-7 text-[11px] w-36"
+          />
         </div>
       </div>
 
