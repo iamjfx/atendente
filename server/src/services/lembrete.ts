@@ -12,7 +12,7 @@ async function processLembretes() {
 
     const { data: agendamentos } = await db
       .from("agendamentos")
-      .select("id, user_id, cliente_nome, telefone, servico, data, hora_inicio, instance_id")
+      .select("id, user_id, cliente_nome, telefone, servico, data, hora_inicio, created_at, instance_id")
       .eq("data", dataStr)
       .in("status", ["confirmed", "pending"])
       .limit(50);
@@ -22,6 +22,21 @@ async function processLembretes() {
     for (const apt of agendamentos) {
       const slugs = await getAccountProductSlugs(apt.user_id);
       if (!hasProduct(slugs, "atendente")) continue;
+
+      // Lê config de lembrete do usuário
+      const { data: cfg } = await db
+        .from("ia_configs")
+        .select("lembrete_horas")
+        .eq("account_id", apt.user_id)
+        .maybeSingle();
+
+      const horas = cfg?.lembrete_horas ?? 24;
+      if (horas <= 0) continue; // Desligado
+
+      // Calcula se já passou do momento de enviar
+      const dataAgendamento = new Date(apt.data + "T" + apt.hora_inicio);
+      const dataLembrete = new Date(dataAgendamento.getTime() - horas * 3600000);
+      if (dataLembrete > new Date()) continue; // Ainda não é hora
 
       const { data: instance } = await db
         .from("evolution_instances")

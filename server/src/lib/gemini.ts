@@ -13,6 +13,7 @@ export interface IaConfig {
   greeting_message: string | null;
   closing_message: string | null;
   deslocamento_minutos: number;
+  lembrete_horas: number;
 }
 
 export interface BusinessHours {
@@ -54,6 +55,7 @@ function buildSystemPrompt(
     greeting_message: null,
     closing_message: null,
     deslocamento_minutos: 30,
+    lembrete_horas: 24,
   };
 
   let prompt = `Você é ${nameIa}, a recepcionista virtual de ${empresa}.`;

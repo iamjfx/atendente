@@ -122,6 +122,7 @@ router.post("/register", async (req, res: Response) => {
       collect_service: true,
       collect_address: true,
       deslocamento_minutos: 30,
+      lembrete_horas: 24,
     });
 
     const businessHoursDefaults = [1, 2, 3, 4, 5].map((dia) => ({

@@ -21,6 +21,7 @@ interface IaConfig {
   greeting_message: string | null;
   closing_message: string | null;
   deslocamento_minutos: number;
+  lembrete_horas: number;
 }
 
 export default function IaConfig() {
@@ -35,6 +36,7 @@ export default function IaConfig() {
   const [greetingMessage, setGreetingMessage] = useState("");
   const [closingMessage, setClosingMessage] = useState("");
   const [deslocamentoMinutos, setDeslocamentoMinutos] = useState(30);
+  const [lembreteHoras, setLembreteHoras] = useState(24);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -56,6 +58,7 @@ export default function IaConfig() {
           setGreetingMessage(data.greeting_message || "");
           setClosingMessage(data.closing_message || "");
           setDeslocamentoMinutos(data.deslocamento_minutos ?? 30);
+          setLembreteHoras(data.lembrete_horas ?? 24);
         }
         setLoading(false);
       });
@@ -75,6 +78,7 @@ export default function IaConfig() {
         greeting_message: greetingMessage || null,
         closing_message: closingMessage || null,
         deslocamento_minutos: deslocamentoMinutos,
+        lembrete_horas: lembreteHoras,
       };
 
       const { data: existing } = await db
@@ -231,6 +235,39 @@ export default function IaConfig() {
                 onChange={(e) => setDeslocamentoMinutos(Number(e.target.value))}
                 className="w-32"
               />
+            </div>
+
+            <Separator />
+
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">⏰ Lembrete de agendamento</Label>
+              <p className="text-xs text-muted-foreground">
+                Enviar WhatsApp de lembrete para o cliente quanto tempo antes do horário marcado.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { label: "1h", value: 1 },
+                  { label: "3h", value: 3 },
+                  { label: "6h", value: 6 },
+                  { label: "12h", value: 12 },
+                  { label: "1 dia", value: 24 },
+                  { label: "2 dias", value: 48 },
+                  { label: "🔇 Desligado", value: 0 },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setLembreteHoras(opt.value)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                      lembreteHoras === opt.value
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background text-muted-foreground border-border hover:bg-accent"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <Button className="w-full" onClick={handleSave} disabled={saving}>
