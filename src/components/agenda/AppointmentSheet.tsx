@@ -76,12 +76,25 @@ export default function AppointmentSheet({
     }
   }
 
+  function formatDateBR(iso: string): string {
+    if (!iso) return "";
+    const [y, m, d] = iso.split("-");
+    if (!y || !m || !d) return iso;
+    return `${d}/${m}/${y}`;
+  }
+
+  function isoFromBR(br: string): string {
+    const digits = br.replace(/\D/g, "");
+    if (digits.length !== 8) return br;
+    return `${digits.slice(4)}-${digits.slice(2, 4)}-${digits.slice(0, 2)}`;
+  }
+
   useEffect(() => {
     if (appointment) {
       setForm({
         cliente_nome: appointment.cliente_nome,
         telefone: formatPhoneBR(appointment.telefone ?? ""),
-        data: appointment.data,
+        data: formatDateBR(appointment.data),
         hora_inicio: appointment.hora_inicio,
         hora_fim: appointment.hora_fim,
         servico: appointment.servico,
@@ -101,7 +114,7 @@ export default function AppointmentSheet({
       setForm({
         cliente_nome: "",
         telefone: "",
-        data: defaultDate ?? "",
+        data: defaultDate ? formatDateBR(defaultDate) : "",
         hora_inicio: defaultTime ?? "",
         hora_fim: "",
         servico: "",
@@ -158,6 +171,7 @@ export default function AppointmentSheet({
     try {
       await onSave({
         ...form,
+        data: isoFromBR(form.data),
         id: appointment?.id,
         cliente_id: appointment?.cliente_id,
       });
@@ -241,32 +255,51 @@ export default function AppointmentSheet({
               <Label htmlFor="data" className="text-xs">Data *</Label>
               <Input
                 id="data"
-                type="date"
                 value={form.data}
-                onChange={(e) => setForm({ ...form, data: e.target.value })}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").slice(0, 8);
+                  let masked = digits;
+                  if (digits.length > 4) masked = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+                  else if (digits.length > 2) masked = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+                  setForm({ ...form, data: masked });
+                }}
+                placeholder="DD/MM/AAAA"
+                maxLength={10}
                 required
-                className="h-8 text-xs"
+                className="h-7 text-xs"
               />
             </div>
             <div className="space-y-1 min-w-0">
               <Label htmlFor="hora_inicio" className="text-xs">Início *</Label>
               <Input
                 id="hora_inicio"
-                type="time"
                 value={form.hora_inicio}
-                onChange={(e) => setForm({ ...form, hora_inicio: e.target.value })}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").slice(0, 4);
+                  let masked = digits;
+                  if (digits.length > 2) masked = `${digits.slice(0, 2)}:${digits.slice(2)}`;
+                  setForm({ ...form, hora_inicio: masked });
+                }}
+                placeholder="HH:MM"
+                maxLength={5}
                 required
-                className="h-8 text-xs"
+                className="h-7 text-xs"
               />
             </div>
             <div className="space-y-1 min-w-0">
               <Label htmlFor="hora_fim" className="text-xs">Fim</Label>
               <Input
                 id="hora_fim"
-                type="time"
                 value={form.hora_fim}
-                onChange={(e) => setForm({ ...form, hora_fim: e.target.value })}
-                className="h-8 text-xs"
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").slice(0, 4);
+                  let masked = digits;
+                  if (digits.length > 2) masked = `${digits.slice(0, 2)}:${digits.slice(2)}`;
+                  setForm({ ...form, hora_fim: masked });
+                }}
+                placeholder="HH:MM"
+                maxLength={5}
+                className="h-7 text-xs"
               />
             </div>
             <div className="space-y-1 min-w-0">
@@ -275,7 +308,7 @@ export default function AppointmentSheet({
                 id="tipo"
                 value={form.tipo}
                 onChange={(e) => setForm({ ...form, tipo: e.target.value as "agendado" | "imediato" })}
-                className="h-8 text-xs w-full rounded-md border border-input bg-background px-2"
+                className="h-7 text-xs w-full rounded-md border border-input bg-background px-2"
               >
                 <option value="agendado">Agendado</option>
                 <option value="imediato">Imediato</option>
