@@ -104,18 +104,18 @@ export default function WeekTimeline({ currentDate, appointments, onSelectAppoin
                     </div>
                   );
                 })}
-
-                {/* Current time indicator */}
-                {isSameDay(day, now) && currentHour >= 7 && currentHour <= 20 && (
-                  <div
-                    className="absolute left-0 right-0 border-t-2 border-destructive z-10"
-                    style={{ top: (currentHour - 7) * SLOT_HEIGHT * 2 }}
-                  >
-                    <div className="w-2 h-2 rounded-full bg-destructive -mt-1 -ml-1" />
-                  </div>
-                )}
               </div>
             ))}
+
+            {/* Current time indicator - full week width */}
+            {currentHour >= 7 && currentHour <= 20 && (
+              <div
+                className="absolute left-12 right-0 border-t-2 border-destructive z-10 pointer-events-none"
+                style={{ top: (currentHour - 7) * SLOT_HEIGHT * 2 }}
+              >
+                <div className="w-2 h-2 rounded-full bg-destructive -mt-1 -ml-1" />
+              </div>
+            )}
           </div>
         </div>
       </div>

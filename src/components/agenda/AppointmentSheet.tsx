@@ -285,12 +285,13 @@ export default function AppointmentSheet({
                 id="cep"
                 value={form.cep}
                 onChange={(e) => {
-                  const v = e.target.value.replace(/\D/g, "").slice(0, 8);
-                  setForm({ ...form, cep: v });
-                  if (v.length === 8) buscarCEP(v);
+                  const digits = e.target.value.replace(/\D/g, "").slice(0, 8);
+                  const masked = digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
+                  setForm({ ...form, cep: masked });
+                  if (digits.length === 8) buscarCEP(digits);
                 }}
                 placeholder="00000-000"
-                maxLength={8}
+                maxLength={9}
                 className="w-36"
               />
               {buscaCep && (
