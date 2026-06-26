@@ -132,6 +132,8 @@ export default function Index() {
   const subtitleRef = useRef<HTMLParagraphElement>(null);
   const badgeRef = useRef<HTMLDivElement>(null);
   const selectedDayRef = useRef(selectedDay);
+  const animTriggered = useRef(false);
+  const animStartTime = useRef(0);
 
   useEffect(() => { selectedDayRef.current = selectedDay; }, [selectedDay]);
 
@@ -178,6 +180,21 @@ export default function Index() {
 
     const now = performance.now();
 
+    // Mobile: trigger/reset da animação temporal (1000ms)
+    if (isMobile) {
+      if (rawProgress > 0.05 && !animTriggered.current) {
+        animTriggered.current = true;
+        animStartTime.current = now;
+      }
+      if (rawProgress < 0.01 && animTriggered.current) {
+        animTriggered.current = false;
+      }
+    }
+    const animT = animTriggered.current && isMobile
+      ? Math.min(1, (now - animStartTime.current) / 1000)
+      : 0;
+    const animEase = 1 - Math.pow(1 - animT, 3); // easeOutCubic
+
     messages.forEach((_msg, i) => {
       const bubble = bubbleRefs.current[i];
       if (!bubble) return;
@@ -189,37 +206,50 @@ export default function Index() {
       const endX = slotRect.x || startX;
       const endY = slotRect.y || (startY + 200);
 
-      const x = startX + (endX - startX) * p;
-      const y = startY + (endY - startY) * p;
-      const base = depthScales[i];
-      const scale = base + (0.65 - base) * Math.min(1, p * 1.8);
-      let floatX: number, floatY: number;
       if (isMobile) {
-        // Mobile: float orbital Lissajous suave (cada bolha tem padrao unico)
-        const t = now / 1000;
+        // Mobile: animação temporal (1000ms) independente do scroll
+        const flightX = startX + (endX - startX) * animEase;
+        const flightY = startY + (endY - startY) * animEase;
+
+        const sec = now * 0.001;
         const phase = i * 0.6 + Math.sin(i) * 0.3;
-        floatX = Math.sin(t * 0.7 + phase) * 5 + Math.sin(t * 0.4 + phase * 1.3) * 3;
-        floatY = Math.cos(t * 0.6 + phase * 0.8) * 5 + Math.cos(t * 0.5 + phase * 1.1) * 3;
+        const floatX = Math.sin(sec * 0.7 + phase) * 5 + Math.sin(sec * 0.4 + phase * 1.3) * 3;
+        const floatY = Math.cos(sec * 0.6 + phase * 0.8) * 5 + Math.cos(sec * 0.5 + phase * 1.1) * 3;
+        const floatInfluence = Math.max(0, 1 - animT * 0.5);
+
+        const base = depthScales[i];
+        const scale = 0.3 + 0.7 * (1 - animEase * 0.7);
+
+        const rot = rotVals[i] * Math.max(0, 1 - animEase);
+
+        const finalX = flightX + floatX * floatInfluence;
+        const finalY = flightY + floatY * floatInfluence;
+
+        bubble.style.transform = `translate(-50%,-50%) translate(${finalX}px,${finalY}px) rotate(${rot}deg) scale(${scale})`;
+        bubble.style.opacity = String(1 - animT * 0.9);
       } else {
+        // Desktop: animação scroll-driven (original)
+        const x = startX + (endX - startX) * p;
+        const y = startY + (endY - startY) * p;
+        const base = depthScales[i];
+        const scale = base + (0.65 - base) * Math.min(1, p * 1.8);
         const floatAmt = Math.max(0.15, 1 - Math.max(0, p - 0.3) * 3);
         const floatPhase = Math.sin(now / 800 * (2 + i * 0.15) + i * 1.2);
-        floatX = floatOffsets[i].x * floatAmt * floatPhase * 1;
-        floatY = floatOffsets[i].y * floatAmt * floatPhase * 1;
-      }
-      const rot = rotVals[i] * Math.max(0, 1 - p * 1.5);
-      const floatInfluence = Math.max(0, 1 - p * 0.6);
-      const finalX = x + floatX * floatInfluence;
-      const finalY = y + floatY * floatInfluence;
+        const floatX = floatOffsets[i].x * floatAmt * floatPhase * 1;
+        const floatY = floatOffsets[i].y * floatAmt * floatPhase * 1;
+        const rot = rotVals[i] * Math.max(0, 1 - p * 1.5);
+        const finalX = x + floatX;
+        const finalY = y + floatY;
 
-      bubble.style.transform = `translate(-50%,-50%) translate(${finalX}px,${finalY}px) rotate(${rot}deg) scale(${scale})`;
-      if (isMobile) {
-        // Mobile: bolhas somem ao chegar no destino (p 0.7-0.9)
-        bubble.style.opacity = String(1 - Math.max(0, Math.min(1, (p - 0.7) / 0.2)));
-      } else {
+        bubble.style.transform = `translate(-50%,-50%) translate(${finalX}px,${finalY}px) rotate(${rot}deg) scale(${scale})`;
         bubble.style.opacity = String(1 - Math.max(0, Math.min(1, (rawProgress - 0.5) / 0.3)));
       }
     });
 
+    // Texto: mobile usa progresso mapeado da animação temporal
+    const textProgress = isMobile && animTriggered.current
+      ? animT * 0.7
+      : rawProgress;
     const wordWindows = [
       { el: badgeRef.current, start: 0.0, end: 0.10 },
       { el: wordRefs.current[0], start: 0.0, end: 0.10 },
@@ -229,14 +259,14 @@ export default function Index() {
     ];
     wordWindows.forEach(({ el, start, end }) => {
       if (!el) return;
-      const t = Math.max(0, Math.min(1, (rawProgress - start) / (end - start)));
+      const t = Math.max(0, Math.min(1, (textProgress - start) / (end - start)));
       const eased = 1 - Math.pow(1 - t, 3);
       el.style.opacity = String(eased);
       el.style.transform = `translateY(${(1 - eased) * 40}px)`;
     });
 
     if (subtitleRef.current) {
-      const t = Math.max(0, Math.min(1, (rawProgress - 0.30) / 0.15));
+      const t = Math.max(0, Math.min(1, (textProgress - 0.30) / 0.15));
       const eased = 1 - Math.pow(1 - t, 3);
       subtitleRef.current.style.opacity = String(eased);
       subtitleRef.current.style.transform = `translateY(${(1 - eased) * 24}px)`;
