@@ -159,7 +159,7 @@ export const faqs = [
   {
     categoria: "Configurações e Conta",
     q: "Como funciona a cobrança da assinatura do Atendente?",
-    a: "A assinatura do Atendente é recorrente (mensal ou anual) e cobrada de forma integrada ao ecossistema do Controle Total. Você pode gerenciar os planos contratados e visualizar os dados de faturamento diretamente na seção de Assinatura nas configurações da plataforma.",
+    a: "O Atendente oferece dois planos: **Basic (R$ 47/mês)** com IA + agenda + analytics, e **Pro (R$ 97/mês)** que adiciona lembretes automáticos, bloqueio de contatos e tempo de deslocamento. Todos os planos têm 14 dias de trial grátis sem cartão. Você também pode combinar com a **Vitrine (R$ 29/mês)** — site profissional com catálogo e agendamento público — ou contratar o combo **Vitrine + Atendente Basic por R$ 67/mês**.",
   },
   {
     categoria: "Configurações e Conta",
@@ -178,8 +178,18 @@ export const faqs = [
   },
   {
     categoria: "Agendamentos",
-    q: "Como a IA calcula a duração do agendamento?",
-    a: "A IA usa a **duração** cadastrada no catálogo de serviços (em **Configurações > Serviços**). Se um serviço tem duração de 90 minutos, o horário final do agendamento será calculado como hora_inicio + 90min. Antes os agendamentos tinham duração fixa de 1h — agora a duração é dinâmica de acordo com cada serviço.",
+    q: "Meus clientes podem agendar sozinhos sem falar com a IA?",
+    a: "Sim! Se você tiver **Vitrine + Controle Total**, seus clientes podem acessar seu site, ver os serviços com preços e agendar no horário que preferirem — sem falar com ninguém. O agendamento cai direto na sua agenda e você recebe a notificação no WhatsApp. Se depois o cliente tirar dúvida ou quiser remarcar pelo WhatsApp, a IA do Atendente atende normalmente.",
+  },
+  {
+    categoria: "Agendamentos",
+    q: "Como faço para meus clientes conseguirem agendar pelo site?",
+    a: "Você precisa ter os produtos **Vitrine** (site profissional) e **Controle Total** ativos na sua conta. Na Vitrine, seus serviços já aparecem com preços e um botão **📅 Agendar**. O cliente clica, escolhe data e horário disponível em tempo real, preenche nome e WhatsApp, e confirma — tudo automático.",
+  },
+  {
+    categoria: "Clientes e Conversas",
+    q: "Qual a diferença entre o Atendente, a Vitrine e o Controle Total?",
+    a: "**Atendente** é a recepcionista IA do WhatsApp — atende, agenda, tira dúvidas. **Vitrine** é o seu site profissional — catálogo, SEO, CRM, campanhas. **Controle Total** é o ERP — gestão de clientes, ordens de serviço, financeiro. Os 3 funcionam juntos: o cliente vê seus serviços na Vitrine, agenda sozinho, e se mandar WhatsApp a IA responde. Tudo integrado no mesmo sistema.",
   },
   {
     categoria: "Configurações e Conta",
@@ -194,7 +204,7 @@ export const faqs = [
   {
     categoria: "Configurações e Conta",
     q: "Onde vejo as métricas de atendimento do Atendente?",
-    a: "O Dashboard já mostra métricas do dia (conversas hoje, resolução IA, pendentes, status do WhatsApp). Em breve, uma página dedicada de **Analytics** trará dados históricos: volume de conversas, percentual resolvido pela IA, tempo médio de resposta, serviços mais solicitados, horários de pico e regiões dos clientes.",
+    a: "O Dashboard mostra métricas em tempo real. A página de **Analytics** traz dados históricos completos: volume de conversas, percentual resolvido pela IA, tempo médio de resposta, serviços mais solicitados, horários de pico, regiões dos clientes e evolução diária. Disponível em **Menu > Analytics**.",
   },
   {
     categoria: "Clientes e Conversas",

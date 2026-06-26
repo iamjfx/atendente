@@ -1,6 +1,16 @@
 # Documentação Técnica: Atendente (Recepcionista IA)
 
-O **Atendente** é uma recepcionista inteligente via Inteligência Artificial que atende, tria e agenda atendimentos automaticamente pelo WhatsApp, integrado ao ecossistema **Controle Total**.
+O **Atendente** é uma recepcionista inteligente via Inteligência Artificial que atende, tria e agenda atendimentos automaticamente pelo WhatsApp.
+
+Faz parte de um ecossistema de **3 produtos** que compartilham o mesmo banco PostgreSQL:
+
+| Produto | Domínio | Porta | O que faz |
+|---------|---------|-------|-----------|
+| **Atendente** | `atendente.controletotal.app` | 5003 | Recepcionista IA WhatsApp |
+| **Vitrine** | `vitrine.controletotal.app` | 5002 | Construtor de sites (catálogo, CRM, SEO) |
+| **Controle Total** | `controletotal.app` | 5001 | ERP (OS, financeiro, clientes) |
+
+Os 3 rodam no mesmo VPS, compartilham o PostgreSQL (`controletotal`) e têm SSO entre si.
 
 ---
 
@@ -27,6 +37,8 @@ graph TD
 - ✅ Substituído cliente Supabase JS por **QueryBuilder próprio** (`src/integrations/db/client.ts`)
 - ✅ Autenticação via Supabase REST (sem client JS pesado)
 - ✅ Banco PostgreSQL acessado diretamente pelo backend via `pg` pool
+- ✅ Rotas públicas (sem auth) para integração com Vitrine
+- ✅ Feature gate: agendamento público liberado quando conta tem Vitrine + Controle Total
 
 ---
 
@@ -51,7 +63,8 @@ atendente/
 │   │   │   ├── instances.ts   # CRUD instâncias WhatsApp
 │   │   │   ├── messages.ts    # Conversas e mensagens
 │   │   │   ├── dashboard.ts   # Dashboard metrics
-│   │   │   ├── agenda.ts      # Disponibilidade e slots
+│   │   │   ├── agenda.ts      # Disponibilidade e slots (auth)
+│   │   │   ├── public.ts     # Rotas públicas (sem auth) — disponibilidade + criar agendamento
 │   │   │   └── data.ts        # CRUD genérico (proxy DB)
 │   │   └── services/
 │   │       ├── messageHandler.ts  # Pipeline principal de IA
@@ -205,6 +218,42 @@ Campos: `serviço`, `data` (YYYY-MM-DD), `horário` (HH:MM), `deslocamento` (min
 ### Notificação ao Dono
 - Após criar agendamento, `notificarDono()` envia WhatsApp para o telefone do perfil
 - Mensagem inclui: cliente, serviço, data, horário, deslocamento, previsão de saída
+
+---
+
+## 7b. Rotas Públicas (Integração com Vitrine)
+
+O Atendente expõe duas rotas **sem autenticação** para que a Vitrine (ou qualquer site) consulte disponibilidade e crie agendamentos.
+
+### Disponibilidade
+```
+GET /api/public/agenda/:account_id/:data
+```
+- Retorna horários livres baseado em `business_hours`, serviços e agendamentos existentes
+- Calcula duração do slot baseada no maior serviço + deslocamento
+- Sem auth — usado pela Vitrine no frontend público
+
+### Criação de Agendamento
+```
+POST /api/public/agendamentos
+Headers: x-api-key: <PUBLIC_API_KEY>
+Body: { account_id, servico, data, hora_inicio, nome, telefone }
+```
+- Cria cliente (se não existir) + agendamento na tabela compartilhada
+- Dispara `notificarDono()` via WhatsApp
+- Protegido por `PUBLIC_API_KEY` (configurada no .env)
+
+### Como a Vitrine consome
+```
+Cliente na Vitrine → escolhe serviço → vê horários (consulta API pública)
+                    → preenche dados → confirma (POST na API pública)
+                    → agendamento criado → dono notificado no WhatsApp
+```
+
+### Feature Gate
+- O botão "Agendar" só aparece na Vitrine se a conta tiver **`controletotal`** ativo em `account_products`
+- Verificação feita na rota `GET /api/public/config/:slug` da Vitrine
+- Controlado no backend da Vitrine via consulta direta ao PostgreSQL compartilhado
 
 ---
 

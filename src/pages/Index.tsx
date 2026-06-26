@@ -493,7 +493,7 @@ export default function Index() {
 
       {/* AGENDA */}
       <div ref={agendaRef}>
-        <section className="relative py-20 md:py-28 overflow-hidden">
+        <section className="relative pt-20 md:pt-28 pb-0 md:pb-28 overflow-hidden">
           <div className="mx-auto max-w-6xl px-4 relative">
             <div className={`text-center mb-12 md:mb-16`}>
               <div ref={badgeRef} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-semibold mb-4" style={{ opacity: 0 }}>
@@ -515,9 +515,22 @@ export default function Index() {
             </div>
 
             <div className={`agenda-header-in ${progress > 0.6 ? "visible" : ""}`}>
-              {/* Mobile: vertical list (apenas Segunda) */}
+              {/* Mobile: pills (só visual) + vertical list (apenas Segunda) */}
               <div className="md:hidden space-y-3">
-                <div className="text-xs font-semibold text-muted-foreground">Segunda</div>
+                <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
+                  {days.map((day) => (
+                    <button
+                      key={day.key}
+                      className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                        day.key === "seg"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {day.full}
+                    </button>
+                  ))}
+                </div>
 
                 <div className="relative">
                   {messages.map((msg) => {
@@ -607,7 +620,7 @@ export default function Index() {
       </div>
 
       {/* COMO FUNCIONA */}
-      <section id="como-funciona" className="py-20 md:py-28">
+      <section id="como-funciona" className="py-0 md:py-28 -mt-[380px] md:mt-0">
         <div className="mx-auto max-w-6xl px-4">
           <div className="text-center mb-16">
             <h2 className="text-[32px] md:text-[44px] font-black text-foreground mb-4" style={{ textWrap: "balance" }}>
