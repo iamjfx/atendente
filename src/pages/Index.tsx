@@ -69,8 +69,10 @@ for (let i = 0; i < 24; i++) {
   const col = i % 4;
   const jitterX = (i * 7 + 3) % 7 - 3;
   const jitterY = (i * 13 + 7) % 7 - 3;
+  // Mobile: top começa em 5 (vs 10) para ficar logo abaixo do header
+  const topBase = typeof window !== "undefined" && window.innerWidth < 768 ? 5 : 10;
   heroPositions.push({
-    top: 10 + row * 14 + jitterY,
+    top: topBase + row * 14 + jitterY,
     left: 15 + col * 22 + jitterX,
   });
 }
