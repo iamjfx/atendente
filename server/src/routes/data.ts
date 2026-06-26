@@ -22,8 +22,8 @@ const ALLOWED_TABLES = [
 ];
 
 const TABLES_WITH_USER_ID = new Set([
-  "agendamentos", "clientes", "conversations", "evolution_instances",
-  "ia_configs", "business_hours", "servicos_catalogo", "orcamentos", "leads",
+  "agendamentos", "clientes",
+  "business_hours", "servicos_catalogo", "orcamentos", "leads",
 ]);
 
 function validateTable(table: string): string | null {
