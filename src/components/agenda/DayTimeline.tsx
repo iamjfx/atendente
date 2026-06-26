@@ -75,7 +75,7 @@ export default function DayTimeline({ selectedDate, appointments, onSelectAppoin
               key={apt.id}
               onClick={() => onSelectAppointment(apt)}
               className={cn(
-                "absolute left-12 right-1 rounded-lg border px-2 py-1.5 cursor-pointer overflow-hidden transition-all hover:shadow-md group",
+                "absolute left-12 right-1 rounded-lg border px-2 py-1.5 cursor-pointer overflow-hidden transition-all hover:shadow-md",
                 statusColor(apt.status)
               )}
               style={{ top, height, minHeight: SLOT_HEIGHT }}
@@ -94,10 +94,11 @@ export default function DayTimeline({ selectedDate, appointments, onSelectAppoin
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-[#25D366]/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="inline-flex items-center gap-1 text-[11px] text-[#25D366] hover:text-[#20ba5a] font-medium mt-1"
                     title="Falar no WhatsApp"
                   >
-                    <MessageCircle className="w-3 h-3 text-[#25D366]" />
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    WhatsApp
                   </a>
                 ) : null;
               })()}

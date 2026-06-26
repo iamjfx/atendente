@@ -94,7 +94,7 @@ export default function WeekTimeline({ currentDate, appointments, onSelectAppoin
                       key={apt.id}
                       onClick={() => onSelectAppointment(apt)}
                       className={cn(
-                        "absolute left-0.5 right-0.5 rounded border px-1 py-0.5 cursor-pointer overflow-hidden transition-all hover:shadow-md z-[5] group",
+                        "absolute left-0.5 right-0.5 rounded border px-1 py-0.5 cursor-pointer overflow-hidden transition-all hover:shadow-md z-[5]",
                         statusColor(apt.status)
                       )}
                       style={{ top, height }}
@@ -111,10 +111,11 @@ export default function WeekTimeline({ currentDate, appointments, onSelectAppoin
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
-                            className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-[#25D366]/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="inline-flex items-center gap-0.5 text-[9px] text-[#25D366] hover:text-[#20ba5a] font-medium"
                             title="Falar no WhatsApp"
                           >
-                            <MessageCircle className="w-2.5 h-2.5 text-[#25D366]" />
+                            <MessageCircle className="w-2.5 h-2.5" />
+                            WhatsApp
                           </a>
                         ) : null;
                       })()}

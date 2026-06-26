@@ -43,7 +43,7 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="md:hidden fixed left-3 right-3 bottom-3 z-[56] mx-auto max-w-md"
+      className="md:hidden fixed left-3 right-3 bottom-3 z-30 mx-auto max-w-md"
       style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 8px)" }}
       aria-label="Navegação principal"
     >

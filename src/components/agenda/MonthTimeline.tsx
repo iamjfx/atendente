@@ -73,7 +73,7 @@ export default function MonthTimeline({ currentMonth, appointments, onSelectDate
                       key={apt.id}
                       onClick={(e) => { e.stopPropagation(); onSelectAppointment(apt); }}
                       className={cn(
-                        "text-[10px] px-1 py-0.5 rounded truncate leading-tight group relative",
+                        "text-[10px] px-1 py-0.5 rounded truncate leading-tight",
                         apt.status === "confirmed" && "bg-success/20 text-success",
                         apt.status === "pending" && "bg-yellow-500/20 text-yellow-700",
                         apt.status === "completed" && "bg-primary/20 text-primary",
@@ -87,10 +87,11 @@ export default function MonthTimeline({ currentMonth, appointments, onSelectDate
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="absolute top-0.5 right-0.5 w-3.5 h-3.5 rounded-full bg-[#25D366]/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="ml-1 inline-flex items-center gap-0.5 text-[8px] text-[#25D366] hover:text-[#20ba5a]"
                           title="Falar no WhatsApp"
                         >
-                          <MessageCircle className="w-2 h-2 text-[#25D366]" />
+                          <MessageCircle className="w-2 h-2" />
+                          WhatsApp
                         </a>
                       )}
                     </div>
