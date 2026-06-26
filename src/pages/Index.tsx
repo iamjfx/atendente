@@ -386,7 +386,7 @@ export default function Index() {
       </section>
 
       {/* Floating bubbles */}
-      <div className="block">
+      <div className="hidden md:block">
         {messages.map((msg, i) => {
           const color = avatarColors[i % avatarColors.length];
           return (
