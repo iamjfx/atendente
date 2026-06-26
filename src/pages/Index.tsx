@@ -52,6 +52,21 @@ const avatarColors = [
   "hsl(145,65%,40%)", "hsl(300,70%,50%)", "hsl(210,75%,45%)", "hsl(15,80%,55%)",
 ];
 
+const SEGMENTOS = [
+  { icone: "⚡", nome: "Eletricista" },
+  { icone: "🔧", nome: "Encanador" },
+  { icone: "🎨", nome: "Pintor" },
+  { icone: "🔨", nome: "Pedreiro" },
+  { icone: "🪴", nome: "Jardineiro" },
+  { icone: "🔩", nome: "Mecânico" },
+  { icone: "💇", nome: "Cabeleireiro" },
+  { icone: "🧠", nome: "Psicólogo" },
+  { icone: "💆", nome: "Massoterapeuta" },
+  { icone: "💻", nome: "Técnico de TI" },
+  { icone: "🐕", nome: "Pet Shop" },
+  { icone: "📸", nome: "Fotógrafo" },
+];
+
 const heroPositions: { top: number; left: number }[] = [];
 for (let i = 0; i < 24; i++) {
   const row = Math.floor(i / 4);
@@ -574,6 +589,53 @@ export default function Index() {
                 Conversa natural, não robô ✨
               </span>
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* SEGMENTOS */}
+      <section className="py-20 md:py-28 bg-[#F5F5F7]">
+        <div className="max-w-6xl mx-auto px-4 md:px-6">
+          <div className="text-center mb-14">
+            <h2 className="text-[32px] md:text-[48px] font-bold tracking-[-0.02em] text-[#1D1D1F] mb-4">
+              Do eletricista ao psicólogo.
+            </h2>
+            <p className="text-[15px] md:text-[17px] text-gray-500 max-w-xl mx-auto leading-relaxed">
+              Se você atende por WhatsApp, a IA trabalha pra você. Qualquer ramo, qualquer negócio.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 max-w-4xl mx-auto">
+            {SEGMENTOS.map((seg) => (
+              <div
+                key={seg.nome}
+                className="group flex items-center gap-3 p-4 rounded-2xl bg-white border border-gray-100/80 hover:border-primary/20 hover:shadow-md transition-all duration-300 cursor-default"
+              >
+                <span className="text-2xl">{seg.icone}</span>
+                <span className="text-sm font-semibold text-[#1D1D1F] group-hover:text-primary transition-colors">
+                  {seg.nome}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* DEPOIMENTO */}
+      <section className="py-24 md:py-32 bg-[#1D1D1F] text-white">
+        <div className="max-w-4xl mx-auto px-4 md:px-6 text-center">
+          <span className="text-5xl mb-6 block">💬</span>
+          <blockquote className="text-xl md:text-2xl leading-relaxed font-medium text-white/90 mb-8 max-w-2xl mx-auto">
+            "Testei 3 sistemas antes. Esse foi o único que não precisei de tutorial. Em 10 minutos já estava pronto. A IA respondeu 3 clientes enquanto eu tomava café. Parece mágica, mas é só tecnologia bem feita."
+          </blockquote>
+          <div className="flex items-center justify-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-sm font-bold text-primary">
+              R
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-semibold text-white">Ricardo</p>
+              <p className="text-xs text-white/50">Eletricista • São Paulo, SP</p>
+            </div>
           </div>
         </div>
       </section>
