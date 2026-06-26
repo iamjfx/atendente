@@ -14,13 +14,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Logo = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="24" height="24" rx="6" fill="hsl(220,78%,48%)" />
-    <path d="M6 13.5C6 10.462 8.462 8 11.5 8H12.5C15.538 8 18 10.462 18 13.5C18 16.538 15.538 19 12.5 19H11.5C10.5 19 9.5 18.5 9 18L6 19L7 16.5C6.5 15.8 6 14.8 6 13.5Z" fill="white" />
-    <circle cx="10" cy="12" r="0.5" fill="hsl(220,78%,48%)" />
-    <circle cx="12" cy="12" r="0.5" fill="hsl(220,78%,48%)" />
-    <circle cx="14" cy="12" r="0.5" fill="hsl(220,78%,48%)" />
-  </svg>
+  <img src="/logo-atendente.jpg" alt="Atendente" className="w-6 h-6 rounded-lg object-cover" />
 );
 
 const allRoutes = [
