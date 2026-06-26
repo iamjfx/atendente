@@ -245,7 +245,7 @@ export default function AppointmentSheet({
                 value={form.data}
                 onChange={(e) => setForm({ ...form, data: e.target.value })}
                 required
-                className="h-7 text-xs"
+                className="h-7 min-h-0 py-0 text-xs"
               />
             </div>
             <div className="space-y-0.5">
@@ -256,7 +256,7 @@ export default function AppointmentSheet({
                 value={form.hora_inicio}
                 onChange={(e) => setForm({ ...form, hora_inicio: e.target.value })}
                 required
-                className="h-7 text-xs"
+                className="h-7 min-h-0 py-0 text-xs"
               />
             </div>
             <div className="space-y-0.5">
@@ -266,7 +266,7 @@ export default function AppointmentSheet({
                 type="time"
                 value={form.hora_fim}
                 onChange={(e) => setForm({ ...form, hora_fim: e.target.value })}
-                className="h-7 text-xs"
+                className="h-7 min-h-0 py-0 text-xs"
               />
             </div>
             <div className="space-y-0.5">
