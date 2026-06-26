@@ -28,6 +28,7 @@ interface DashboardStatus {
     servico: string;
     hora_inicio: string;
     status: string;
+    telefone?: string | null;
   }[];
   pendentes: {
     id: string;
@@ -328,9 +329,27 @@ export default function Dashboard() {
                   <p className="text-sm font-medium">{apt.cliente_nome}</p>
                   <p className="text-xs text-muted-foreground">{apt.servico} • {apt.hora_inicio}</p>
                 </div>
-                <span className={`text-xs px-2 py-1 rounded-full ${apt.status === "confirmed" ? "bg-green-500/10 text-green-600" : "bg-amber-500/10 text-amber-600"}`}>
-                  {apt.status === "confirmed" ? "Confirmado" : "Pendente"}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs px-2 py-1 rounded-full ${apt.status === "confirmed" ? "bg-green-500/10 text-green-600" : "bg-amber-500/10 text-amber-600"}`}>
+                    {apt.status === "confirmed" ? "Confirmado" : "Pendente"}
+                  </span>
+                  {(() => {
+                    const phone = apt.telefone?.replace(/\D/g, "");
+                    const url = phone ? `https://api.whatsapp.com/send?phone=55${phone}` : null;
+                    return url ? (
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-6 h-6 rounded-full bg-[#25D366]/10 flex items-center justify-center hover:bg-[#25D366]/20 transition-colors shrink-0"
+                        title="Falar no WhatsApp"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5 text-[#25D366]" />
+                      </a>
+                    ) : null;
+                  })()}
+                </div>
               </div>
             ))
           ) : (

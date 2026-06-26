@@ -23,7 +23,7 @@ router.get("/status", async (req: AuthenticatedRequest, res: Response) => {
 
     db
       .from("agendamentos")
-      .select("id, cliente_nome, servico, hora_inicio, status")
+      .select("id, cliente_nome, servico, hora_inicio, status, telefone")
       .eq("user_id", accountId)
       .eq("data", hoje),
 
