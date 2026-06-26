@@ -115,6 +115,7 @@ router.put("/:table/:id?", authMiddleware, async (req: AuthenticatedRequest, res
       query = query.eq("id", id);
     } else {
       for (const [col, val] of Object.entries(req.query)) {
+        if (["single", "limit", "order"].includes(col)) continue;
         query = query.eq(col, val);
       }
     }
@@ -145,6 +146,7 @@ router.delete("/:table/:id?", authMiddleware, async (req: AuthenticatedRequest, 
       query = query.eq("id", id);
     } else {
       for (const [col, val] of Object.entries(req.query)) {
+        if (["single", "limit", "order"].includes(col)) continue;
         query = query.eq(col, val);
       }
     }
