@@ -34,6 +34,9 @@ export default function DayTimeline({ selectedDate, appointments, onSelectAppoin
     [appointments, selectedDate]
   );
 
+  const now = new Date();
+  const currentHour = now.getHours() + now.getMinutes() / 60;
+
   return (
     <div className="relative overflow-y-auto h-[calc(100vh-280px)] lg:h-[calc(100vh-210px)]">
       <div className="relative" style={{ height: HOURS.length * SLOT_HEIGHT * 2 }}>
@@ -48,10 +51,7 @@ export default function DayTimeline({ selectedDate, appointments, onSelectAppoin
             {/* Half-hour slot click areas */}
             {[0, 1].map((half) => {
               const time = `${String(hour).padStart(2, "0")}:${half === 0 ? "00" : "30"}`;
-  const now = new Date();
-  const currentHour = now.getHours() + now.getMinutes() / 60;
-
-  return (
+              return (
                 <div
                   key={half}
                   className="absolute left-12 right-0 border-b border-border/30 cursor-pointer hover:bg-accent/30 transition-colors"
