@@ -80,8 +80,8 @@ export default function DayTimeline({ selectedDate, appointments, onSelectAppoin
               )}
               style={{ top, height, minHeight: SLOT_HEIGHT }}
             >
-              <div className="flex justify-between items-start gap-1">
-                <div className="min-w-0 flex-1">
+              <div className="flex flex-col h-full">
+                <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-foreground truncate">{apt.cliente_nome}</p>
                   <p className="text-xs text-muted-foreground truncate">{apt.servico}</p>
                   <p className="text-xs text-muted-foreground/70">
@@ -92,17 +92,19 @@ export default function DayTimeline({ selectedDate, appointments, onSelectAppoin
                   const phone = apt.telefone?.replace(/\D/g, "");
                   const url = phone ? `https://api.whatsapp.com/send?phone=55${phone}` : null;
                   return url ? (
-                    <a
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="shrink-0 flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md bg-[#25D366]/10 hover:bg-[#25D366]/20 transition-colors mt-0.5"
-                      title="Falar no WhatsApp"
-                    >
-                      <MessageCircle className="w-4 h-4 text-[#25D366]" />
-                      <span className="text-[9px] font-semibold text-[#25D366] leading-none">ZAP</span>
-                    </a>
+                    <div className="flex justify-end">
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex items-center gap-1 text-[11px] text-[#25D366] hover:text-[#20ba5a] font-medium"
+                        title="Falar no WhatsApp"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5" />
+                        WhatsApp
+                      </a>
+                    </div>
                   ) : null;
                 })()}
               </div>

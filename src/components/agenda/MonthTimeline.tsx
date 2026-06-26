@@ -73,26 +73,32 @@ export default function MonthTimeline({ currentMonth, appointments, onSelectDate
                       key={apt.id}
                       onClick={(e) => { e.stopPropagation(); onSelectAppointment(apt); }}
                       className={cn(
-                        "text-[10px] px-1 py-0.5 rounded truncate leading-tight flex items-center justify-between gap-1",
+                        "text-[10px] px-1 py-0.5 rounded truncate leading-tight",
                         apt.status === "confirmed" && "bg-success/20 text-success",
                         apt.status === "pending" && "bg-yellow-500/20 text-yellow-700",
                         apt.status === "completed" && "bg-primary/20 text-primary",
                         apt.status === "cancelled" && "bg-muted text-muted-foreground line-through"
                       )}
                     >
-                      <span className="truncate min-w-0">{apt.hora_inicio} {apt.cliente_nome}</span>
-                      {url && (
-                        <a
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="shrink-0 inline-flex items-center gap-0.5 text-[#25D366] hover:text-[#20ba5a]"
-                          title="Falar no WhatsApp"
-                        >
-                          <MessageCircle className="w-2.5 h-2.5" />
-                        </a>
-                      )}
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="truncate min-w-0">{apt.hora_inicio} {apt.cliente_nome}</span>
+                        {(() => {
+                          const phone = apt.telefone?.replace(/\D/g, "");
+                          const url = phone ? `https://api.whatsapp.com/send?phone=55${phone}` : null;
+                          return url ? (
+                            <a
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="shrink-0 inline-flex items-center gap-0.5 text-[#25D366] hover:text-[#20ba5a]"
+                              title="Falar no WhatsApp"
+                            >
+                              <MessageCircle className="w-2.5 h-2.5" />
+                            </a>
+                          ) : null;
+                        })()}
+                      </div>
                     </div>
                   );
                 })}
