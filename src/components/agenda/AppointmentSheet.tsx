@@ -4,7 +4,6 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetDescription,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -180,12 +179,36 @@ export default function AppointmentSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
-        <SheetHeader className="mb-6">
-          <SheetTitle>{isNew ? "Novo Agendamento" : "Editar Agendamento"}</SheetTitle>
-          <SheetDescription>
-            {isNew ? "Preencha os dados para criar um novo agendamento" : "Altere os dados do agendamento"}
-          </SheetDescription>
+      <SheetContent className="w-full sm:max-w-lg overflow-y-auto pb-16 md:pb-6">
+        <SheetHeader className="mb-4">
+          <SheetTitle className="flex items-center flex-wrap gap-2">
+            {isNew ? "Novo Agendamento" : "Editar Agendamento"}
+            {appointment && (
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                form.status === "confirmed" ? "bg-green-500/10 text-green-600" :
+                form.status === "pending" ? "bg-yellow-500/10 text-yellow-600" :
+                form.status === "completed" ? "bg-blue-500/10 text-blue-600" :
+                "bg-muted text-muted-foreground"
+              }`}>
+                {statusLabels[form.status]}
+              </span>
+            )}
+          </SheetTitle>
+          {appointment && (
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Status:
+              {(["pending", "confirmed", "completed", "cancelled"] as AppointmentStatus[]).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => onStatusChange(appointment.id, s)}
+                  className={`ml-1.5 underline ${form.status === s ? "font-bold text-foreground" : "text-muted-foreground/60 hover:text-foreground"}`}
+                >
+                  {statusLabels[s]}
+                </button>
+              ))}
+            </p>
+          )}
         </SheetHeader>
 
         <form onSubmit={handleSubmit} className="space-y-3">
@@ -213,46 +236,46 @@ export default function AppointmentSheet({
             </div>
           </div>
 
-          <div className="grid grid-cols-4 gap-2">
-            <div className="space-y-1">
-              <Label htmlFor="data" className="text-xs">Data *</Label>
+          <div className="grid grid-cols-4 gap-1.5">
+            <div className="space-y-0.5">
+              <Label htmlFor="data" className="text-[10px]">Data *</Label>
               <Input
                 id="data"
                 type="date"
                 value={form.data}
                 onChange={(e) => setForm({ ...form, data: e.target.value })}
                 required
-                className="h-8 text-xs"
+                className="h-7 text-xs"
               />
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="hora_inicio" className="text-xs">Início *</Label>
+            <div className="space-y-0.5">
+              <Label htmlFor="hora_inicio" className="text-[10px]">Início *</Label>
               <Input
                 id="hora_inicio"
                 type="time"
                 value={form.hora_inicio}
                 onChange={(e) => setForm({ ...form, hora_inicio: e.target.value })}
                 required
-                className="h-8 text-xs"
+                className="h-7 text-xs"
               />
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="hora_fim" className="text-xs">Fim</Label>
+            <div className="space-y-0.5">
+              <Label htmlFor="hora_fim" className="text-[10px]">Fim</Label>
               <Input
                 id="hora_fim"
                 type="time"
                 value={form.hora_fim}
                 onChange={(e) => setForm({ ...form, hora_fim: e.target.value })}
-                className="h-8 text-xs"
+                className="h-7 text-xs"
               />
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="tipo" className="text-xs">Tipo</Label>
+            <div className="space-y-0.5">
+              <Label htmlFor="tipo" className="text-[10px]">Tipo</Label>
               <select
                 id="tipo"
                 value={form.tipo}
                 onChange={(e) => setForm({ ...form, tipo: e.target.value as "agendado" | "imediato" })}
-                className="h-8 text-xs w-full rounded-md border border-input bg-background px-2"
+                className="h-7 text-xs w-full rounded-md border border-input bg-background px-1"
               >
                 <option value="agendado">Agendado</option>
                 <option value="imediato">Imediato</option>
@@ -288,9 +311,34 @@ export default function AppointmentSheet({
           <Separator />
           <p className="text-[10px] font-semibold text-muted-foreground">Endereço do cliente</p>
 
-          <div className="grid grid-cols-4 gap-2">
-            <div className="col-span-2 space-y-1">
-              <Label htmlFor="cep" className="text-xs">CEP</Label>
+          {/* Rua + Número */}
+          <div className="flex gap-2">
+            <div className="flex-[4] space-y-0.5">
+              <Label htmlFor="rua" className="text-[10px]">Rua</Label>
+              <Input
+                id="rua"
+                value={form.rua}
+                onChange={(e) => setForm({ ...form, rua: e.target.value })}
+                placeholder="Rua"
+                className="h-7 text-xs"
+              />
+            </div>
+            <div className="flex-1 space-y-0.5">
+              <Label htmlFor="numero" className="text-[10px]">Nº</Label>
+              <Input
+                id="numero"
+                value={form.numero}
+                onChange={(e) => setForm({ ...form, numero: e.target.value })}
+                placeholder="Nº"
+                className="h-7 text-xs"
+              />
+            </div>
+          </div>
+
+          {/* CEP + Bairro + Cidade */}
+          <div className="flex gap-2 flex-wrap">
+            <div className="space-y-0.5 w-[9ch]">
+              <Label htmlFor="cep" className="text-[10px]">CEP</Label>
               <div className="relative">
                 <Input
                   id="cep"
@@ -303,65 +351,42 @@ export default function AppointmentSheet({
                   }}
                   placeholder="00000-000"
                   maxLength={9}
-                  className="h-8 text-xs"
+                  className="h-7 text-xs"
                 />
                 {buscaCep && (
-                  <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 animate-spin text-muted-foreground" />
+                  <Loader2 className="absolute right-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 animate-spin text-muted-foreground" />
                 )}
               </div>
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="rua" className="text-xs">Rua</Label>
-              <Input
-                id="rua"
-                value={form.rua}
-                onChange={(e) => setForm({ ...form, rua: e.target.value })}
-                placeholder="Rua"
-                className="h-8 text-xs"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="numero" className="text-xs">Nº</Label>
-              <Input
-                id="numero"
-                value={form.numero}
-                onChange={(e) => setForm({ ...form, numero: e.target.value })}
-                placeholder="Nº"
-                className="h-8 text-xs"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2">
-            <div className="space-y-1">
-              <Label htmlFor="bairro" className="text-xs">Bairro</Label>
+            <div className="flex-1 space-y-0.5 min-w-[120px]">
+              <Label htmlFor="bairro" className="text-[10px]">Bairro</Label>
               <Input
                 id="bairro"
                 value={form.bairro}
                 onChange={(e) => setForm({ ...form, bairro: e.target.value })}
                 placeholder="Bairro"
-                className="h-8 text-xs"
+                className="h-7 text-xs"
               />
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="cidade" className="text-xs">Cidade</Label>
+            <div className="flex-1 space-y-0.5 min-w-[120px]">
+              <Label htmlFor="cidade" className="text-[10px]">Cidade</Label>
               <Input
                 id="cidade"
                 value={form.cidade}
                 onChange={(e) => setForm({ ...form, cidade: e.target.value })}
                 placeholder="Cidade"
-                className="h-8 text-xs"
+                className="h-7 text-xs"
               />
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="uf" className="text-xs">UF</Label>
+            <div className="hidden md:block space-y-0.5 w-14">
+              <Label htmlFor="uf" className="text-[10px]">UF</Label>
               <Input
                 id="uf"
                 value={form.uf}
                 onChange={(e) => setForm({ ...form, uf: e.target.value })}
                 placeholder="UF"
                 maxLength={2}
-                className="h-8 text-xs w-14"
+                className="h-7 text-xs"
               />
             </div>
           </div>
@@ -405,29 +430,8 @@ export default function AppointmentSheet({
             </div>
           )}
 
-          {!isNew && (
-            <div className="space-y-1">
-              <Label className="text-xs">Status</Label>
-              <div className="flex flex-wrap gap-1.5">
-                {(["pending", "confirmed", "completed", "cancelled"] as AppointmentStatus[]).map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => onStatusChange(appointment.id, s)}
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${
-                      form.status === s
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-background text-muted-foreground border-border hover:bg-accent"
-                    }`}
-                  >
-                    {statusLabels[s]}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
 
-          <div className="flex items-center gap-2 pt-3 border-t border-border">
+          <div className="flex items-center gap-2 pt-3 border-t border-border pb-4 md:pb-0">
             <Button type="submit" size="sm" className="rounded-full h-8 text-xs" disabled={saving}>
               {saving && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
               {isNew ? "Criar" : "Salvar"}
