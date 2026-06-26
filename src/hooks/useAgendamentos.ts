@@ -172,9 +172,9 @@ export function useAgendamentos() {
         );
       }
       // Salva endereço no cliente após atualizar agendamento
-      const { data: user } = await db.auth.getUser();
-      if (user?.user) {
-        await salvarEnderecoCliente(apt, user.user.id, data?.id);
+      const userId = data?.user_id || (apt as any).user_id;
+      if (userId) {
+        await salvarEnderecoCliente(apt, userId, data?.id);
       }
     }
   };
