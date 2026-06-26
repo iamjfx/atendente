@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { db } from "@/integrations/db/client";
+import { toast } from "sonner";
 import type { Appointment } from "@/types/appointment";
 
 const ROW_MAPPING = {
@@ -74,19 +75,23 @@ export function useAgendamentos() {
     userId: string,
     _agendamentoId?: string
   ) {
-    const telefone = (apt.telefone || "").replace(/\D/g, "").replace(/^55/, "");
-    if (!telefone) return;
-
-    // Verifica se algum campo de endereço foi preenchido
     if (!apt.cep && !apt.rua && !apt.bairro && !apt.cidade) return;
 
-    // Busca ou cria cliente
-    const { data: existente } = await db
-      .from("clientes")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("telefone", telefone)
-      .maybeSingle();
+    let clienteId = apt.cliente_id;
+
+    // Se não tem cliente_id, busca por telefone
+    if (!clienteId) {
+      const telefone = (apt.telefone || "").replace(/\D/g, "").replace(/^55/, "");
+      if (!telefone) return;
+
+      const { data: existente } = await db
+        .from("clientes")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("telefone", telefone)
+        .maybeSingle();
+      if (existente) clienteId = existente.id;
+    }
 
     const payload: Record<string, any> = {
       cep: apt.cep || null,
@@ -97,15 +102,20 @@ export function useAgendamentos() {
       uf: apt.uf || null,
     };
 
-    if (existente) {
-      await db.from("clientes").update(payload).eq("id", existente.id);
-    } else {
-      await db.from("clientes").insert({
-        ...payload,
-        user_id: userId,
-        nome: apt.cliente_nome || "Cliente",
-        telefone,
-      });
+    try {
+      if (clienteId) {
+        await db.from("clientes").update(payload).eq("id", clienteId);
+      } else {
+        const telefone = (apt.telefone || "").replace(/\D/g, "").replace(/^55/, "");
+        await db.from("clientes").insert({
+          ...payload,
+          user_id: userId,
+          nome: apt.cliente_nome || "Cliente",
+          telefone: telefone || null,
+        });
+      }
+    } catch (err: any) {
+      console.error("Erro ao salvar endereço do cliente:", err);
     }
   }
 
@@ -144,6 +154,7 @@ export function useAgendamentos() {
       }
       // Salva endereço no cliente após criar agendamento
       await salvarEnderecoCliente(apt, user.user.id, data?.id);
+      toast.success("Agendamento criado!");
     } else {
       const { data, error } = await db
         .from("agendamentos")
@@ -176,6 +187,7 @@ export function useAgendamentos() {
       if (userId) {
         await salvarEnderecoCliente(apt, userId, data?.id);
       }
+      toast.success("Agendamento atualizado!");
     }
   };
 

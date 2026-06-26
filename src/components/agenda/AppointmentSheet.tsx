@@ -157,7 +157,11 @@ export default function AppointmentSheet({
     if (!form.cliente_nome || !form.data || !form.hora_inicio) return;
     setSaving(true);
     try {
-      await onSave({ ...form, id: appointment?.id });
+      await onSave({
+        ...form,
+        id: appointment?.id,
+        cliente_id: appointment?.cliente_id,
+      });
       onOpenChange(false);
     } finally {
       setSaving(false);
