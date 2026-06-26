@@ -2,6 +2,7 @@ import "dotenv/config";
 
 export const config = {
   port: parseInt(process.env.PORT || "3001", 10),
+  publicApiKey: process.env.PUBLIC_API_KEY || "chave_publica_vitrine_dev",
   evolution: {
     apiUrl: process.env.EVOLUTION_API_URL || "http://srv1778424.hstgr.cloud:32774",
     apiKey: (() => {

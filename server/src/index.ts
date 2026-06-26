@@ -14,6 +14,7 @@ import dataRouter from "./routes/data.js";
 import agendaRouter from "./routes/agenda.js";
 import dashboardRouter from "./routes/dashboard.js";
 import analyticsRouter from "./routes/analytics.js";
+import publicRouter from "./routes/public.js";
 
 const app = express();
 
@@ -47,6 +48,7 @@ app.use("/db", dataRouter);
 app.use("/agenda", agendaRouter);
 app.use("/dashboard", dashboardRouter);
 app.use("/analytics", analyticsRouter);
+app.use("/public", publicRouter);
 
 app.listen(config.port, () => {
   console.log(`Atendente API rodando na porta ${config.port}`);
