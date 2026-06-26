@@ -117,6 +117,7 @@ export default function Index() {
   const [activeStep, setActiveStep] = useState(0);
   const [progress, setProgress] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [selectedDay, setSelectedDay] = useState("seg");
   const bubbleRefs = useRef<(HTMLDivElement | null)[]>([]);
   const slotRefs = useRef<(HTMLDivElement | null)[]>([]);
   const agendaRef = useRef<HTMLDivElement>(null);
@@ -442,54 +443,105 @@ export default function Index() {
             </div>
 
             <div className={`agenda-header-in ${progress > 0.6 ? "visible" : ""}`}>
-              <div className="overflow-x-auto pb-4 -mx-4 px-4 md:overflow-visible md:pb-0 md:mx-0 md:px-0 scrollbar-none">
-                <div className="grid grid-cols-5 gap-2 md:gap-3 min-w-[540px] md:min-w-0">
-                  {days.map((day) => (
-                    <div key={day.key} className="min-h-[200px] md:min-h-[240px]">
-                      <div className="text-center mb-2 md:mb-3">
-                        <div className="text-[11px] md:text-sm font-bold text-foreground/90">{day.label}</div>
-                        <div className="text-[10px] md:text-xs text-muted-foreground/60 hidden md:block">{day.full}</div>
-                      </div>
-                      <div className="space-y-1.5 md:space-y-2">
-                        {messages
-                          .filter((m) => m.day === day.key)
-                          .map((msg) => {
-                            const idx = messages.indexOf(msg);
-                            return (
-                              <div
-                                key={msg.id}
-                                ref={(el) => { slotRefs.current[idx] = el; }}
-                                className={`agenda-item group rounded-xl p-2.5 md:p-3 border border-border/70 bg-card hover:shadow-card transition-shadow cursor-default ${progress > 0.7 ? "visible" : ""}`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <div
-                                    className="w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center shrink-0 text-[10px] md:text-xs font-bold text-white shadow-sm"
-                                    style={{ background: avatarColors[idx % avatarColors.length] }}
-                                  >
-                                    {avatarLetters[idx]}
+              {/* Desktop: 5-column week grid */}
+              <div className="hidden md:grid md:grid-cols-5 gap-3">
+                {days.map((day) => (
+                  <div key={day.key} className="min-h-[240px]">
+                    <div className="text-center mb-3">
+                      <div className="text-sm font-bold text-foreground/90">{day.label}</div>
+                      <div className="text-xs text-muted-foreground/60">{day.full}</div>
+                    </div>
+                    <div className="space-y-2">
+                      {messages
+                        .filter((m) => m.day === day.key)
+                        .map((msg) => {
+                          const idx = messages.indexOf(msg);
+                          return (
+                            <div
+                              key={msg.id}
+                              ref={(el) => { slotRefs.current[idx] = el; }}
+                              className={`agenda-item group rounded-xl p-3 border border-border/70 bg-card hover:shadow-card transition-shadow cursor-default ${progress > 0.7 ? "visible" : ""}`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold text-white shadow-sm"
+                                  style={{ background: avatarColors[idx % avatarColors.length] }}
+                                >
+                                  {avatarLetters[idx]}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center justify-between gap-1">
+                                    <span className="text-xs font-semibold text-foreground truncate">{msg.name}</span>
+                                    <span className="text-[10px] text-muted-foreground/60 shrink-0 flex items-center gap-0.5">
+                                      <Clock className="w-2.5 h-2.5" />
+                                      {msg.time}
+                                    </span>
                                   </div>
-                                  <div className="min-w-0 flex-1">
-                                    <div className="flex items-center justify-between gap-1">
-                                      <span className="text-[11px] md:text-xs font-semibold text-foreground truncate">{msg.name}</span>
-                                      <span className="text-[9px] md:text-[10px] text-muted-foreground/60 shrink-0 flex items-center gap-0.5">
-                                        <Clock className="w-2.5 h-2.5" />
-                                        {msg.time}
-                                      </span>
-                                    </div>
-                                    <p className="text-[10px] md:text-xs text-muted-foreground/80 leading-snug line-clamp-1 mt-0.5">{msg.service}</p>
-                                  </div>
+                                  <p className="text-xs text-muted-foreground/80 leading-snug line-clamp-1 mt-0.5">{msg.service}</p>
                                 </div>
                               </div>
-                            );
-                          })}
-                        {messages.filter((m) => m.day === day.key).length === 0 && (
-                          <div className="h-10 md:h-12 rounded-xl border border-dashed border-border/40 bg-background/40 flex items-center justify-center">
-                            <span className="text-[10px] text-muted-foreground/30">Disponível</span>
-                          </div>
-                        )}
-                      </div>
+                            </div>
+                          );
+                        })}
+                      {messages.filter((m) => m.day === day.key).length === 0 && (
+                        <div className="h-12 rounded-xl border border-dashed border-border/40 bg-background/40 flex items-center justify-center">
+                          <span className="text-xs text-muted-foreground/30">Disponível</span>
+                        </div>
+                      )}
                     </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Mobile: day pills + vertical list */}
+              <div className="md:hidden space-y-3">
+                <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
+                  {days.map((day) => (
+                    <button
+                      key={day.key}
+                      onClick={() => setSelectedDay(day.key)}
+                      className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                        selectedDay === day.key
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground hover:bg-accent"
+                      }`}
+                    >
+                      {day.full}
+                    </button>
                   ))}
+                </div>
+
+                <div className="space-y-2">
+                  {messages
+                    .filter((m) => m.day === selectedDay)
+                    .map((msg) => {
+                      const idx = messages.indexOf(msg);
+                      return (
+                        <div
+                          key={msg.id}
+                          className="flex items-start gap-3 p-3 rounded-xl border border-border/70 bg-card"
+                        >
+                          <div
+                            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold text-white shadow-sm"
+                            style={{ background: avatarColors[idx % avatarColors.length] }}
+                          >
+                            {avatarLetters[idx]}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="text-xs font-semibold text-foreground truncate">{msg.name}</span>
+                              <span className="text-[10px] text-muted-foreground/60 shrink-0">{msg.time}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground/80 leading-snug mt-0.5">{msg.service}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  {messages.filter((m) => m.day === selectedDay).length === 0 && (
+                    <div className="h-12 rounded-xl border border-dashed border-border/40 bg-background/40 flex items-center justify-center">
+                      <span className="text-xs text-muted-foreground/30">Nenhuma mensagem neste dia</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
