@@ -9,10 +9,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, Trash2, MapPin, ExternalLink } from "lucide-react";
 import type { Appointment, AppointmentFormData, AppointmentStatus } from "@/types/appointment";
 import { statusLabels } from "@/lib/statusHelpers";
 import { formatPhoneBR } from "@/lib/utils";
+import { db } from "@/integrations/db/client";
 import { toast } from "sonner";
 
 interface Props {
@@ -32,6 +33,7 @@ export default function AppointmentSheet({
 }: Props) {
   const isNew = !appointment?.id;
   const [saving, setSaving] = useState(false);
+  const [endereco, setEndereco] = useState<string | null>(null);
   const [form, setForm] = useState<AppointmentFormData>({
     cliente_nome: "",
     telefone: "",
@@ -74,6 +76,28 @@ export default function AppointmentSheet({
       });
     }
   }, [appointment, defaultDate, defaultTime, open]);
+
+  // Carrega endereço do cliente
+  useEffect(() => {
+    if (isNew || !appointment?.cliente_id) {
+      setEndereco(null);
+      return;
+    }
+    setEndereco(null);
+    db.from("clientes")
+      .select("endereco, rua, numero, bairro, cidade, uf")
+      .eq("id", appointment.cliente_id)
+      .maybeSingle()
+      .then(({ data }: any) => {
+        if (data) {
+          const completo =
+            data.endereco ||
+            [data.rua, data.numero, data.bairro, data.cidade, data.uf]
+              .filter(Boolean).join(", ");
+          setEndereco(completo || null);
+        }
+      });
+  }, [isNew, appointment?.cliente_id, open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -208,6 +232,34 @@ export default function AppointmentSheet({
               placeholder="Observações sobre o agendamento..."
             />
           </div>
+
+          {endereco && (
+            <div className="space-y-2 p-3 rounded-lg bg-muted/50 border border-border/40">
+              <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5" />
+                Endereço do cliente
+              </p>
+              <p className="text-sm">{endereco}</p>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {[
+                  { label: "Waze", url: `https://waze.com/ul?q=${encodeURIComponent(endereco)}` },
+                  { label: "Google Maps", url: `https://maps.google.com/?q=${encodeURIComponent(endereco)}` },
+                  { label: "Apple Maps", url: `https://maps.apple.com/?q=${encodeURIComponent(endereco)}` },
+                ].map((m) => (
+                  <a
+                    key={m.label}
+                    href={m.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    {m.label}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
 
           {!isNew && (
             <div className="space-y-2">
