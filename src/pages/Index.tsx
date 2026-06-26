@@ -69,10 +69,8 @@ for (let i = 0; i < 24; i++) {
   const col = i % 4;
   const jitterX = (i * 7 + 3) % 7 - 3;
   const jitterY = (i * 13 + 7) % 7 - 3;
-  // Mobile: top começa em 5 (vs 10) para ficar logo abaixo do header
-  const topBase = typeof window !== "undefined" && window.innerWidth < 768 ? 5 : 10;
   heroPositions.push({
-    top: topBase + row * 14 + jitterY,
+    top: 10 + row * 14 + jitterY,
     left: 15 + col * 22 + jitterX,
   });
 }
@@ -153,7 +151,12 @@ export default function Index() {
       const slot = slotRefs.current[i];
 
       const startX = (heroPositions[i].left / 100) * windowW;
-      const startY = (heroPositions[i].top / 100) * windowH;
+      let startY = (heroPositions[i].top / 100) * windowH;
+
+      // Mobile: ajusta posicao inicial para compensar header fixo
+      if (window.innerWidth < 768) {
+        startY -= 44;
+      }
 
       let endX = startX;
       let endY = startY + 200;
