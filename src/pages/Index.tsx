@@ -148,10 +148,17 @@ export default function Index() {
       const bubble = bubbleRefs.current[i];
       if (!bubble) return;
 
+      const slot = slotRefs.current[i];
+
+      // Mobile: bolha sem destino no dia selecionado → esconde
+      if (!slot && window.innerWidth < 768) {
+        bubble.style.opacity = "0";
+        return;
+      }
+
       const startX = (heroPositions[i].left / 100) * windowW;
       const startY = (heroPositions[i].top / 100) * windowH;
 
-      const slot = slotRefs.current[i];
       let endX = startX;
       let endY = startY + 200;
       if (slot) {
@@ -386,7 +393,7 @@ export default function Index() {
       </section>
 
       {/* Floating bubbles */}
-      <div className="hidden md:block">
+      <div className="block">
         {messages.map((msg, i) => {
           const color = avatarColors[i % avatarColors.length];
           return (
@@ -519,6 +526,7 @@ export default function Index() {
                       return (
                         <div
                           key={msg.id}
+                          ref={(el) => { slotRefs.current[idx] = el; }}
                           className="flex items-start gap-3 p-3 rounded-xl border border-border/70 bg-card"
                         >
                           <div
