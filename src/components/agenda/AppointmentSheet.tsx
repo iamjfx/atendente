@@ -236,46 +236,46 @@ export default function AppointmentSheet({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5">
-            <div className="space-y-0.5">
-              <Label htmlFor="data" className="text-[10px]">Data *</Label>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1 min-w-0">
+              <Label htmlFor="data" className="text-xs">Data *</Label>
               <Input
                 id="data"
                 type="date"
                 value={form.data}
                 onChange={(e) => setForm({ ...form, data: e.target.value })}
                 required
-                className="h-7 min-h-0 py-0 text-xs"
+                className="h-8 text-xs"
               />
             </div>
-            <div className="space-y-0.5">
-              <Label htmlFor="hora_inicio" className="text-[10px]">Início *</Label>
+            <div className="space-y-1 min-w-0">
+              <Label htmlFor="hora_inicio" className="text-xs">Início *</Label>
               <Input
                 id="hora_inicio"
                 type="time"
                 value={form.hora_inicio}
                 onChange={(e) => setForm({ ...form, hora_inicio: e.target.value })}
                 required
-                className="h-7 min-h-0 py-0 text-xs"
+                className="h-8 text-xs"
               />
             </div>
-            <div className="space-y-0.5">
-              <Label htmlFor="hora_fim" className="text-[10px]">Fim</Label>
+            <div className="space-y-1 min-w-0">
+              <Label htmlFor="hora_fim" className="text-xs">Fim</Label>
               <Input
                 id="hora_fim"
                 type="time"
                 value={form.hora_fim}
                 onChange={(e) => setForm({ ...form, hora_fim: e.target.value })}
-                className="h-7 min-h-0 py-0 text-xs"
+                className="h-8 text-xs"
               />
             </div>
-            <div className="space-y-0.5">
-              <Label htmlFor="tipo" className="text-[10px]">Tipo</Label>
+            <div className="space-y-1 min-w-0">
+              <Label htmlFor="tipo" className="text-xs">Tipo</Label>
               <select
                 id="tipo"
                 value={form.tipo}
                 onChange={(e) => setForm({ ...form, tipo: e.target.value as "agendado" | "imediato" })}
-                className="h-7 text-xs w-full rounded-md border border-input bg-background px-1"
+                className="h-8 text-xs w-full rounded-md border border-input bg-background px-2"
               >
                 <option value="agendado">Agendado</option>
                 <option value="imediato">Imediato</option>
