@@ -27,3 +27,4 @@ dist-ssr
 secrets/
 .env
 !.env.encrypted
+graphify-out/
