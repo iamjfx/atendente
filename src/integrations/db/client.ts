@@ -15,6 +15,7 @@ class QueryBuilder {
   }
 
   select(columns?: string) {
+    if (this.method !== 'GET') return this;
     this.method = 'GET';
     return this;
   }
