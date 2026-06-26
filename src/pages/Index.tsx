@@ -553,10 +553,10 @@ export default function Index() {
             {[
               { i: MessageCircle, t: "WhatsApp nativo 😊", d: "Conecta direto na Evolution API. O cliente manda zap, a IA responde. Sem intermediário.", c: "from-primary to-primary/80" },
               { i: Bot, t: "Entendimento contextual 🤔", d: "Não é robô com respostas prontas. A IA entende o que o cliente precisa, extrai dados e decide o próximo passo.", c: "from-[#AC39FF] to-[#9333EA]" },
-              { i: CalendarDays, t: "Auto-agendamento 😎", d: "Consulta sua agenda em tempo real e sugere o melhor horário. Se for cliente do Controle Total, integra direto.", c: "from-[#30D158] to-[#28B84B]" },
-              { i: Users, t: "Histórico completo", d: "Cada conversa fica salva com busca. Você acompanha o que a IA fez e pode intervir quando quiser.", c: "from-[#FF9F0A] to-[#E88F00]" },
-              { i: Smartphone, t: "Painel de conversas 👀", d: "Veja em tempo real o que a IA está respondendo. Entre na conversa com um clique.", c: "from-[#FF375F] to-[#E83056]" },
-              { i: BarChart3, t: "Relatórios 🤓", d: "Quantos clientes foram atendidos, quantos agendaram, quantos voltaram. Dados que te ajudam a crescer.", c: "from-[#5E5CE6] to-[#4B49D6]" },
+              { i: CalendarDays, t: "Auto-agendamento 😎", d: "Consulta sua agenda em tempo real, considera seu deslocamento e sugere o melhor horário. CEP preenche endereço automaticamente.", c: "from-[#30D158] to-[#28B84B]" },
+              { i: Users, t: "Histórico completo", d: "Cada conversa fica salva com busca. Mensagens da IA identificadas com o nome dela, mensagens manuais com 'Você' — cores diferentes pra facilitar.", c: "from-[#FF9F0A] to-[#E88F00]" },
+              { i: Smartphone, t: "Painel de conversas 👀", d: "Veja em tempo real o que a IA está respondendo. Entre na conversa com um clique. Bloqueie contatos indesejados na IA.", c: "from-[#FF375F] to-[#E83056]" },
+              { i: BarChart3, t: "Analytics 📊", d: "Volume de conversas, percentual resolvido pela IA, tempo médio de resposta, serviços mais solicitados, horários de pico e regiões.", c: "from-[#5E5CE6] to-[#4B49D6]" },
             ].map((feat) => (
               <div key={feat.t} className="group relative rounded-2xl p-6 md:p-7 border border-border/80 bg-background hover:shadow-card transition-all duration-300 hover:-translate-y-0.5">
                 <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${feat.c} flex items-center justify-center mb-4 shadow-sm`}>
@@ -595,7 +595,7 @@ export default function Index() {
                 { i: CalendarDays, l: "Agenda e visitas" },
                 { i: Users, l: "Clientes e histórico" },
                 { i: ArrowRight, l: "Linha do tempo" },
-                { i: BarChart3, l: "Relatórios" },
+                { i: BarChart3, l: "Analytics" },
               ].map((item) => (
                 <div key={item.l} className="flex flex-col items-center gap-2">
                   <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">

@@ -21,7 +21,13 @@ O Atendente é uma recepcionista de IA que atende, tria e agenda clientes automa
 - **Horários de Funcionamento**: Configuração de dias e horários de atendimento (7 dias da semana, toggle + time picker).
 - **Notificação ao Dono**: Quando a IA agenda uma visita, envia um WhatsApp pro telefone do dono com cliente, serviço, data, horário e deslocamento.
 - **Painel Web**: Dashboard com métricas (conversas hoje, resolução IA, pendentes, status WhatsApp), agenda com visão dia/semana/mês, conversas em tempo real com toggle IA/manual.
+- **Etiquetas Visuais**: Mensagens identificadas com o nome da assistente (ex: "Claudia") para respostas da IA e "Você" para mensagens manuais, com cores de fundo distintas.
+- **📍 Endereço + CEP + Mapas**: Cadastro de endereço com busca automática por CEP (ViaCEP) e links rápidos para Waze, Google Maps e Apple Maps na agenda.
+- **🔇 Bloquear na IA**: Números de familiares e amigos podem ser bloqueados para não serem processados pela IA. Mensagens descartadas sem armazenamento.
+- **📊 Analytics**: Métricas de atendimento — volume de conversas, percentual resolvido pela IA, tempo médio de resposta, serviços mais solicitados, horários de pico, regiões dos clientes.
+- **🛡️ Moderação de Conteúdo**: Bloqueio automático de mensagens impróprias (profanidade, assédio, conteúdo sexual, apostas, golpes) com log de moderação para compliance.
 - **Histórico Limpo**: Mensagens com frases proibidas ("alguém vai retornar", "recebi sua mensagem") são filtradas do histórico enviado ao Gemini e bloqueadas com dupla checagem de segurança.
+- **Agenda editável**: Cadastro manual de agendamentos com campos completos (nome, telefone, endereço, serviço, valor, status, observações).
 
 ## Brand Personality
 

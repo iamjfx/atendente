@@ -305,5 +305,187 @@ rsync -avz --delete dist/ root@187.127.12.245:/var/www/atendente/
 
 ### Agendamento não cria na agenda
 - Verificar se marcador `📅 AGENDAR|...` está no final da resposta da IA
-- Verificar regex `AGENDAR_REGEX` em `messageHandler.ts`
+- Verificar regex `AGENDAR_REGEX` em `messageHandler/agendamento.ts`
 - Verificar se `servicos_catalogo` tem o serviço com `duracao_minutos`
+
+---
+
+## 13. Bloqueio de Contatos na IA
+
+### Banco
+`conversations.status` aceita `'active'`, `'archived'`, `'blocked'` (SQL check constraint).
+
+### Fluxo
+```
+Usuário clica "🔇 Bloquear na IA" no header da conversa
+  → db.from("conversations").update({ status: "blocked" })
+  → Mensagens do contato são descartadas ANTES de storeMessage
+  → Contato não fica sabendo que foi bloqueado
+  → Filtro "🔇 Bloqueados" na lista de conversas
+
+Para desbloquear:
+  → Botão "✅ Desbloquear IA" → status volta pra "active"
+```
+
+### Arquivos
+| Arquivo | O que faz |
+|---------|-----------|
+| `messageHandler/index.ts` | Check `status === "blocked"` antes de `storeMessage` |
+| `messageHandler/media.ts` | Check `status === "blocked"` antes de armazenar mídia |
+| `Conversas.tsx` | Botão "🔇 Bloquear na IA" / "✅ Desbloquear IA" + filtro "🔇 Bloqueados" |
+
+---
+
+## 14. Moderação de Conteúdo
+
+### Camadas de proteção
+
+```
+Mensagem do cliente
+  ↓
+1. Pré-filtro (blocklist + regex) → se flagrado, não chama Gemini
+  ↓
+2. Gemini Safety Settings → API bloqueia conteúdo ofensivo
+  ↓
+3. Prompt com restrição de ramo → IA só responde sobre o segmento
+  ↓
+Resposta gerada
+```
+
+### Blocklist (`server/src/lib/moderation.ts`)
+
+| Categoria | Ação | Armazenamento |
+|-----------|------|--------------|
+| **Pedofilia / exploração infantil / terrorismo** | Bloquear + NÃO armazenar texto | Só metadados + hash |
+| **Profanidade, assédio, conteúdo sexual** | Bloquear + resposta neutra | Log com preview (20 chars) |
+| **Apostas, golpes, links maliciosos** | Bloquear + resposta neutra | Log normal |
+| **Fora do ramo de atividade** | IA responde educadamente | Fluxo normal |
+
+### Tabela de log
+```sql
+CREATE TABLE moderation_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  account_id UUID NOT NULL REFERENCES profiles(id),
+  conversation_id UUID REFERENCES conversations(id),
+  remote_jid TEXT,
+  content_hash TEXT,
+  content_preview TEXT,
+  motivo TEXT NOT NULL,
+  acao TEXT NOT NULL DEFAULT 'block',
+  reportado_autoridade BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  resolvido BOOLEAN DEFAULT false,
+  resolvido_em TIMESTAMPTZ,
+  resolvido_por TEXT
+);
+```
+
+### Gemini Safety Settings
+```typescript
+safetySettings: [
+  { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+  { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+  { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+  { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+]
+```
+
+### Compliance
+- Conteúdo GRAVE (pedofilia, terrorismo): reportar às autoridades (Delegacia / Disque 100 / SaferNet)
+- Conteúdo armazenado com hash (nunca o texto literal) para preservar privacidade
+- Log de moderação disponível para o dono revisar
+
+---
+
+## 15. Analytics
+
+### Endpoint
+`GET /api/analytics/geral?dias=30`
+
+### Métricas retornadas
+
+| Grupo | Métricas |
+|-------|----------|
+| **Conversas** | Total, resolvidas pela IA (`ai_resolved = true`), percentual |
+| **Mensagens** | Total, geradas pela IA (`ai_processed = true`), manuais |
+| **Tempo de resposta** | Média em segundos (pares cliente → IA) |
+| **Agendamentos** | Total no período, ranking de serviços |
+| **Horários** | Distribuição por hora + dia da semana |
+| **Regiões** | Cidades/UF dos clientes (top 20) |
+| **Evolução diária** | Volume de conversas por dia |
+
+### Coluna `ai_resolved`
+```sql
+ALTER TABLE conversations ADD COLUMN ai_resolved boolean NOT NULL DEFAULT true;
+```
+- Começa como `true` para toda conversa nova
+- Vira `false` quando humano intervém (mensagem manual, pausar IA, bloquear)
+- Usado para calcular o percentual de conversas resolvidas 100% pela IA
+
+### Intervenção humana via WhatsApp (fromMe)
+Quando o dono envia uma mensagem via WhatsApp:
+- Se já existir conversa (IA estava atuando): armazena + marca `ai_resolved = false` + pausa IA
+- Se for conversa nova iniciada pelo dono: descarta (sem registro)
+
+---
+
+## 16. Etiquetas Visuais nas Conversas
+
+### Identificação de mensagens
+
+| Tipo | Etiqueta | Cor de fundo |
+|------|----------|-------------|
+| Resposta da IA | Nome da assistente (ex: "Claudia") | `bg-primary` (azul) |
+| Mensagem manual | "Você" | `bg-muted` (cinza) |
+| Mensagem do cliente | (sem etiqueta) | `bg-card` (branco) |
+
+### Como funciona
+- Mensagens com `from_me = true` e `ai_processed = true` → badge com `profile.nome_ia`
+- Mensagens com `from_me = true` e `ai_processed = false` → badge "Você"
+- Diferenciação visual acelera a leitura do histórico
+
+---
+
+## 17. Endereço + CEP no Formulário de Agendamento
+
+### Campos
+CEP, Rua, Número, Bairro, Cidade, UF
+
+### Auto-preenchimento por CEP
+```
+Usuário digita 8 dígitos no campo CEP
+  → fetch("https://viacep.com.br/ws/{cep}/json/")
+  → rua, bairro, cidade, UF preenchidos automaticamente
+  → Usuário só digita o número
+  → Salva em clientes.cep, clientes.rua, etc.
+```
+
+### Botões de navegação rápida
+Quando o agendamento tem endereço, exibe links para:
+- **Waze**: `https://waze.com/ul?q={endereco}`
+- **Google Maps**: `https://maps.google.com/?q={endereco}`
+- **Apple Maps**: `https://maps.apple.com/?q={endereco}`
+
+---
+
+## 18. Pipeline do Webhook (fluxo completo)
+
+```
+POST /webhook (Evolution API)
+  → handleIncomingMessage()
+    1. Parse payload (zod)
+    2. Buscar instanceRecord
+    3. fromMe? → armazenar se conversa existir, marcar intervenção
+    4. Grupo (@g.us)? → ignorar
+    5. Carregar configs (ia_config, business_hours, servicos, products)
+    6. Mídia (áudio/imagem)? → handleMediaMessage()
+    7. Extrair texto
+    8. ensureConversation()
+    9. status === "blocked"? → descartar sem armazenar
+    10. storeMessage()
+    11. status === "archived"? → não processar IA
+    12. Moderação (blocklist + safety) → bloquear se necessário
+    13. processWithAi() → generateResponse()
+    14. tryCriarAgendamento() + notificarDono() + sendPerguntaOrigem()
+    15. Extrair 📍 ORIGEM| e 📍 ENDERECO| das respostas
+```

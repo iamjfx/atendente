@@ -186,6 +186,31 @@ export const faqs = [
     q: "Como configurar os horários de funcionamento da minha empresa?",
     a: "Vá em **Configurações > Horários de Funcionamento**. Você pode ativar/desativar cada dia da semana e definir os horários de abertura e fechamento. A IA usa essas informações para saber quando sugerir agendamentos aos clientes.",
   },
+  {
+    categoria: "Clientes e Conversas",
+    q: "Como bloquear um contato para a IA não processar as mensagens?",
+    a: "Vá em **Conversas**, abra o chat e clique em **🔇 Bloquear na IA**. As mensagens desse contato serão completamente ignoradas pela IA — não serão armazenadas nem processadas. O contato continua te enviando mensagens normalmente no WhatsApp. Para desbloquear, clique em **✅ Desbloquear IA**.",
+  },
+  {
+    categoria: "Configurações e Conta",
+    q: "Onde vejo as métricas de atendimento do Atendente?",
+    a: "O Dashboard já mostra métricas do dia (conversas hoje, resolução IA, pendentes, status do WhatsApp). Em breve, uma página dedicada de **Analytics** trará dados históricos: volume de conversas, percentual resolvido pela IA, tempo médio de resposta, serviços mais solicitados, horários de pico e regiões dos clientes.",
+  },
+  {
+    categoria: "Clientes e Conversas",
+    q: "Consigo identificar quais mensagens foram respondidas pela IA e quais foram manuais?",
+    a: "Sim! No chat, as mensagens enviadas pela IA têm o nome da sua assistente (ex: **Claudia**) e fundo azul. As mensagens que você enviou manualmente aparecem com **Você** e fundo cinza. Fica fácil de distinguir quem respondeu cada mensagem.",
+  },
+  {
+    categoria: "Agendamentos",
+    q: "Como adicionar o endereço do cliente no agendamento?",
+    a: "Ao editar ou criar um agendamento na **Agenda**, você encontra os campos de endereço: **CEP**, **Rua**, **Número**, **Bairro**, **Cidade** e **UF**. Ao digitar o CEP, os campos de rua, bairro, cidade e UF são preenchidos automaticamente. Se o endereço estiver preenchido, aparecem botões para abrir no **Waze**, **Google Maps** ou **Apple Maps**.",
+  },
+  {
+    categoria: "Configurações e Conta",
+    q: "O Atendente bloqueia mensagens impróprias ou ofensivas?",
+    a: "Sim. O sistema possui moderação automática de conteúdo. Mensagens com palavrões, assédio, conteúdo sexual, apologia ao crime ou tentativas de golpe são bloqueadas antes mesmo de chegarem à IA. Conteúdos graves (como pedofilia ou terrorismo) são registrados para compliance e podem ser reportados às autoridades. A IA também é configurada para responder apenas sobre o ramo de atividade da sua empresa.",
+  },
 ];
 
 export function getCategoriaIcon(cat: string) {
