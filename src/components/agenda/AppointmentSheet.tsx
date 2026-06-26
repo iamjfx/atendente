@@ -36,6 +36,7 @@ export default function AppointmentSheet({
   const [saving, setSaving] = useState(false);
   const [endereco, setEndereco] = useState<string | null>(null);
   const [loadingEndereco, setLoadingEndereco] = useState(false);
+  const [buscaCep, setBuscaCep] = useState(false);
   const [form, setForm] = useState<AppointmentFormData>({
     cliente_nome: "",
     telefone: "",
@@ -45,7 +46,7 @@ export default function AppointmentSheet({
     servico: "",
     valor: 0,
     observacoes: "",
-    endereco: "",
+    cep: "",
     rua: "",
     numero: "",
     bairro: "",
@@ -54,6 +55,27 @@ export default function AppointmentSheet({
     status: "pending",
     tipo: "agendado",
   });
+
+  async function buscarCEP(cep: string) {
+    const clean = cep.replace(/\D/g, "");
+    if (clean.length !== 8) return;
+    setBuscaCep(true);
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${clean}/json/`);
+      const data = await res.json();
+      if (!data.erro) {
+        setForm((f) => ({
+          ...f,
+          rua: data.logradouro || f.rua,
+          bairro: data.bairro || f.bairro,
+          cidade: data.localidade || f.cidade,
+          uf: data.uf || f.uf,
+        }));
+      }
+    } finally {
+      setBuscaCep(false);
+    }
+  }
 
   useEffect(() => {
     if (appointment) {
@@ -66,7 +88,7 @@ export default function AppointmentSheet({
         servico: appointment.servico,
         valor: appointment.valor,
         observacoes: appointment.observacoes ?? "",
-        endereco: "",
+        cep: "",
         rua: "",
         numero: "",
         bairro: "",
@@ -86,7 +108,7 @@ export default function AppointmentSheet({
         servico: "",
         valor: 0,
         observacoes: "",
-        endereco: "",
+        cep: "",
         rua: "",
         numero: "",
         bairro: "",
@@ -108,18 +130,18 @@ export default function AppointmentSheet({
     setEndereco(null);
     const { data }: any = await db
       .from("clientes")
-      .select("endereco, rua, numero, bairro, cidade, uf")
+      .select("cep, endereco, rua, numero, bairro, cidade, uf")
       .eq("id", appointment.cliente_id)
       .maybeSingle();
     if (data) {
-      const completo =
-        data.endereco ||
-        [data.rua, data.numero, data.bairro, data.cidade, data.uf]
-          .filter(Boolean).join(", ");
+      const completo = [
+        data.rua, data.numero, data.bairro, data.cidade, data.uf,
+        data.cep ? `CEP ${data.cep}` : null,
+      ].filter(Boolean).join(", ");
       setEndereco(completo || null);
       setForm((f) => ({
         ...f,
-        endereco: data.endereco || "",
+        cep: data.cep || "",
         rua: data.rua || "",
         numero: data.numero || "",
         bairro: data.bairro || "",
@@ -257,13 +279,24 @@ export default function AppointmentSheet({
           <p className="text-xs font-semibold text-muted-foreground">Endereço do cliente</p>
 
           <div className="space-y-2">
-            <Label htmlFor="endereco">Endereço completo</Label>
-            <Input
-              id="endereco"
-              value={form.endereco}
-              onChange={(e) => setForm({ ...form, endereco: e.target.value })}
-              placeholder="Rua, número, bairro, cidade, UF"
-            />
+            <Label htmlFor="cep">CEP</Label>
+            <div className="relative">
+              <Input
+                id="cep"
+                value={form.cep}
+                onChange={(e) => {
+                  const v = e.target.value.replace(/\D/g, "").slice(0, 8);
+                  setForm({ ...form, cep: v });
+                  if (v.length === 8) buscarCEP(v);
+                }}
+                placeholder="00000-000"
+                maxLength={8}
+                className="w-36"
+              />
+              {buscaCep && (
+                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

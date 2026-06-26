@@ -77,13 +77,8 @@ export function useAgendamentos() {
     const telefone = (apt.telefone || "").replace(/\D/g, "").replace(/^55/, "");
     if (!telefone) return;
 
-    // Verifica se endereço foi preenchido
-    const endereco =
-      apt.endereco ||
-      [apt.rua, apt.numero, apt.bairro, apt.cidade, apt.uf]
-        .filter(Boolean).join(", ");
-
-    if (!endereco && !apt.rua && !apt.bairro && !apt.cidade) return;
+    // Verifica se algum campo de endereço foi preenchido
+    if (!apt.cep && !apt.rua && !apt.bairro && !apt.cidade) return;
 
     // Busca ou cria cliente
     const { data: existente } = await db
@@ -94,7 +89,7 @@ export function useAgendamentos() {
       .maybeSingle();
 
     const payload: Record<string, any> = {
-      endereco: endereco || null,
+      cep: apt.cep || null,
       rua: apt.rua || null,
       numero: apt.numero || null,
       bairro: apt.bairro || null,
