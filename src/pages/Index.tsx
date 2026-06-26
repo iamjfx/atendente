@@ -475,7 +475,58 @@ export default function Index() {
             </div>
 
             <div className={`agenda-header-in ${progress > 0.6 ? "visible" : ""}`}>
-              {/* Desktop: 5-column week grid (renders first, slotRefs overwritten by mobile on small screens) */}
+              {/* Mobile: day pills + vertical list */}
+              <div className="md:hidden space-y-3">
+                <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
+                  {days.map((day) => (
+                    <button
+                      key={day.key}
+                      onClick={() => setSelectedDay(day.key)}
+                      className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                        selectedDay === day.key
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground hover:bg-accent"
+                      }`}
+                    >
+                      {day.full}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="space-y-2 relative">
+                  {messages.map((msg) => {
+                    const idx = messages.indexOf(msg);
+                    const isSelectedDay = msg.day === selectedDay;
+                    return (
+                      <div
+                        key={msg.id}
+                        ref={(el) => { if (window.innerWidth < 768) slotRefs.current[idx] = el; }}
+                        className={`flex items-start gap-3 p-3 rounded-xl border transition-all duration-300 ${
+                          isSelectedDay
+                            ? "border-border/70 bg-card"
+                            : "h-0 p-0 m-0 overflow-hidden border-0 opacity-0"
+                        }`}
+                      >
+                        <div
+                          className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold text-white shadow-sm"
+                          style={{ background: avatarColors[idx % avatarColors.length] }}
+                        >
+                          {avatarLetters[idx]}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="text-xs font-semibold text-foreground truncate">{msg.name}</span>
+                            <span className="text-[10px] text-muted-foreground/60 shrink-0">{msg.time}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground/80 leading-snug mt-0.5">{msg.service}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Desktop: 5-column week grid */}
               <div className="hidden md:grid md:grid-cols-5 gap-3">
                 {days.map((day) => (
                   <div key={day.key} className="min-h-[240px]">
@@ -491,7 +542,7 @@ export default function Index() {
                           return (
                             <div
                               key={msg.id}
-                              ref={(el) => { slotRefs.current[idx] = el; }}
+                              ref={(el) => { if (window.innerWidth >= 768) slotRefs.current[idx] = el; }}
                               className={`agenda-item group rounded-xl p-3 border border-border/70 bg-card hover:shadow-card transition-shadow cursor-default ${progress > 0.7 ? "visible" : ""}`}
                             >
                               <div className="flex items-center gap-2">
@@ -523,57 +574,6 @@ export default function Index() {
                     </div>
                   </div>
                 ))}
-              </div>
-
-              {/* Mobile: day pills + vertical list (renders last, slotRefs win on mobile) */}
-              <div className="md:hidden space-y-3">
-                <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
-                  {days.map((day) => (
-                    <button
-                      key={day.key}
-                      onClick={() => setSelectedDay(day.key)}
-                      className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                        selectedDay === day.key
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground hover:bg-accent"
-                      }`}
-                    >
-                      {day.full}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="space-y-2 relative">
-                  {messages.map((msg) => {
-                    const idx = messages.indexOf(msg);
-                    const isSelectedDay = msg.day === selectedDay;
-                    return (
-                      <div
-                        key={msg.id}
-                        ref={(el) => { slotRefs.current[idx] = el; }}
-                        className={`flex items-start gap-3 p-3 rounded-xl border transition-all duration-300 ${
-                          isSelectedDay
-                            ? "border-border/70 bg-card"
-                            : "h-0 p-0 m-0 overflow-hidden border-0 opacity-0"
-                        }`}
-                      >
-                        <div
-                          className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold text-white shadow-sm"
-                          style={{ background: avatarColors[idx % avatarColors.length] }}
-                        >
-                          {avatarLetters[idx]}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between gap-1">
-                            <span className="text-xs font-semibold text-foreground truncate">{msg.name}</span>
-                            <span className="text-[10px] text-muted-foreground/60 shrink-0">{msg.time}</span>
-                          </div>
-                          <p className="text-xs text-muted-foreground/80 leading-snug mt-0.5">{msg.service}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
               </div>
             </div>
           </div>
