@@ -150,12 +150,6 @@ export default function Index() {
 
       const slot = slotRefs.current[i];
 
-      // Mobile: bolha sem destino no dia selecionado → esconde
-      if (!slot && window.innerWidth < 768) {
-        bubble.style.opacity = "0";
-        return;
-      }
-
       const startX = (heroPositions[i].left / 100) * windowW;
       const startY = (heroPositions[i].top / 100) * windowH;
 
@@ -519,10 +513,8 @@ export default function Index() {
                 </div>
 
                 <div className="space-y-2">
-                  {messages
-                    .filter((m) => m.day === selectedDay)
-                    .map((msg) => {
-                      const idx = messages.indexOf(msg);
+                  {messages.map((msg) => {
+                    const idx = messages.indexOf(msg);
                       return (
                         <div
                           key={msg.id}
@@ -545,10 +537,6 @@ export default function Index() {
                         </div>
                       );
                     })}
-                  {messages.filter((m) => m.day === selectedDay).length === 0 && (
-                    <div className="h-12 rounded-xl border border-dashed border-border/40 bg-background/40 flex items-center justify-center">
-                      <span className="text-xs text-muted-foreground/30">Nenhuma mensagem neste dia</span>
-                    </div>
                   )}
                 </div>
               </div>
