@@ -131,6 +131,9 @@ export default function Index() {
   const wordRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const subtitleRef = useRef<HTMLParagraphElement>(null);
   const badgeRef = useRef<HTMLDivElement>(null);
+  const selectedDayRef = useRef(selectedDay);
+
+  useEffect(() => { selectedDayRef.current = selectedDay; }, [selectedDay]);
 
   const updatePositions = useCallback(() => {
     const hero = heroRef.current;
@@ -182,8 +185,8 @@ export default function Index() {
       const startX = (heroPositions[i].left / 100) * windowW;
       let startY: number;
       if (isMobile) {
-        // Mobile: bolhas compactadas no topo (6 linhas de 28px)
-        startY = 8 + Math.floor(i / 4) * 28;
+        // Mobile: bolhas no topo, podem ficar sob o header (z-index menor)
+        startY = Math.floor(i / 4) * 20 - 4;
       } else {
         startY = (heroPositions[i].top / 100) * windowH;
       }
@@ -196,9 +199,9 @@ export default function Index() {
       const y = startY + (endY - startY) * p;
       const base = depthScales[i];
       const scale = base + (0.65 - base) * Math.min(1, p * 1.8);
-      const floatMult = isMobile ? 4 : 1;
+      const floatMult = isMobile ? 2 : 1;
       const floatAmt = Math.max(0.15, 1 - Math.max(0, p - 0.3) * 3);
-      const floatPhase = Math.sin(now / 800 * (2 + i * 0.15) + i * 1.2);
+      const floatPhase = Math.sin(now / (isMobile ? 1200 : 800) * (2 + i * 0.15) + i * 1.2);
       const floatX = floatOffsets[i].x * floatAmt * floatPhase * floatMult;
       const floatY = floatOffsets[i].y * floatAmt * floatPhase * floatMult;
       const rot = rotVals[i] * Math.max(0, 1 - p * 1.5);
@@ -207,12 +210,26 @@ export default function Index() {
 
       bubble.style.transform = `translate(-50%,-50%) translate(${finalX}px,${finalY}px) rotate(${rot}deg) scale(${scale})`;
       if (isMobile) {
-        // Mobile: bolhas somem só no final (rawProgress 0.7-0.95)
-        bubble.style.opacity = String(1 - Math.max(0, Math.min(1, (rawProgress - 0.7) / 0.25)));
+        // Mobile: bolhas somem no exato momento que o calendário aparece
+        bubble.style.opacity = String(1 - Math.max(0, Math.min(1, (rawProgress - 0.28) / 0.04)));
       } else {
         bubble.style.opacity = String(1 - Math.max(0, Math.min(1, (rawProgress - 0.5) / 0.3)));
       }
     });
+
+    // Mobile: cards aparecem com a MESMA formula do fade das bolhas (sincrono, DOM direto)
+    if (isMobile) {
+      const cardOpacity = Math.max(0, Math.min(1, (rawProgress - 0.28) / 0.04));
+      const currentDay = selectedDayRef.current;
+      messages.forEach((msg, i) => {
+        const slot = slotRefs.current[i];
+        if (!slot) return;
+        if (msg.day === currentDay) {
+          slot.style.opacity = String(cardOpacity);
+          slot.style.transform = `translateY(${(1 - cardOpacity) * 8}px)`;
+        }
+      });
+    }
 
     const wordWindows = [
       { el: badgeRef.current, start: 0.0, end: 0.10 },
@@ -248,7 +265,7 @@ export default function Index() {
       const bubble = bubbleRefs.current[i];
       if (!bubble) return;
       const sx = (heroPositions[i].left / 100) * w;
-      const sy = isMobile ? 8 + Math.floor(i / 4) * 28 : (heroPositions[i].top / 100) * h;
+      const sy = isMobile ? Math.floor(i / 4) * 20 - 4 : (heroPositions[i].top / 100) * h;
       bubble.style.transform = `translate(-50%,-50%) translate(${sx}px,${sy}px) scale(${depthScales[i]})`;
       bubble.style.opacity = "1";
     });
@@ -514,16 +531,16 @@ export default function Index() {
                   {messages.map((msg) => {
                     const idx = messages.indexOf(msg);
                     const isSelectedDay = msg.day === selectedDay;
-                    const visible = isSelectedDay && progress > 0.5;
                     return (
                       <div
                         key={msg.id}
                         ref={(el) => { if (window.innerWidth < 768) slotRefs.current[idx] = el; }}
                         className={`flex items-start gap-3 p-3 rounded-xl border transition-all duration-300 ${
                           isSelectedDay
-                            ? `border-border/70 bg-card mb-2 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`
+                            ? "border-border/70 bg-card mb-2"
                             : "h-0 p-0 m-0 overflow-hidden border-0 opacity-0"
                         }`}
+                        style={isSelectedDay ? { opacity: 0 } : undefined}
                       >
                         <div
                           className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold text-white shadow-sm"
