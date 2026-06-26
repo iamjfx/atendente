@@ -153,8 +153,15 @@ export default function Index() {
 
     // Batch: pre-calcula todos os rects dos slots pra evitar layout thrashing
     const slotRects: { x: number; y: number }[] = messages.map((_, i) => {
+      if (isMobile && rawProgress < 0.01) return { x: 0, y: 0 };
       const slot = slotRefs.current[i];
-      if (!slot) return { x: 0, y: 0 };
+      if (!slot) {
+        if (isMobile) {
+          // Fallback espalhado visível pra bolhas sem slot (dia não selecionado)
+          return { x: windowW * (0.08 + (i % 4) * 0.26), y: windowH * 0.35 + Math.floor(i / 5) * 32 };
+        }
+        return { x: 0, y: 0 };
+      }
       const r = slot.getBoundingClientRect();
       let x = r.left + r.width / 2;
       let y = r.top + r.height / 2;
@@ -173,7 +180,13 @@ export default function Index() {
       if (!bubble) return;
 
       const startX = (heroPositions[i].left / 100) * windowW;
-      const startY = (heroPositions[i].top / 100) * windowH - (isMobile ? 44 : 0);
+      let startY: number;
+      if (isMobile) {
+        // Mobile: bolhas compactadas no topo (6 linhas de 28px)
+        startY = 8 + Math.floor(i / 4) * 28;
+      } else {
+        startY = (heroPositions[i].top / 100) * windowH;
+      }
 
       const slotRect = slotRects[i];
       const endX = slotRect.x || startX;
@@ -193,8 +206,12 @@ export default function Index() {
       const finalY = y + floatY;
 
       bubble.style.transform = `translate(-50%,-50%) translate(${finalX}px,${finalY}px) rotate(${rot}deg) scale(${scale})`;
-      // Sincroniza fade: bolhas somem enquanto cards aparecem (rawProgress 0.5-0.8)
-      bubble.style.opacity = String(1 - Math.max(0, Math.min(1, (rawProgress - 0.5) / 0.3)));
+      if (isMobile) {
+        // Mobile: bolhas somem só no final (rawProgress 0.7-0.95)
+        bubble.style.opacity = String(1 - Math.max(0, Math.min(1, (rawProgress - 0.7) / 0.25)));
+      } else {
+        bubble.style.opacity = String(1 - Math.max(0, Math.min(1, (rawProgress - 0.5) / 0.3)));
+      }
     });
 
     const wordWindows = [
@@ -231,7 +248,7 @@ export default function Index() {
       const bubble = bubbleRefs.current[i];
       if (!bubble) return;
       const sx = (heroPositions[i].left / 100) * w;
-      const sy = (heroPositions[i].top / 100) * h - (isMobile ? 44 : 0);
+      const sy = isMobile ? 8 + Math.floor(i / 4) * 28 : (heroPositions[i].top / 100) * h;
       bubble.style.transform = `translate(-50%,-50%) translate(${sx}px,${sy}px) scale(${depthScales[i]})`;
       bubble.style.opacity = "1";
     });
@@ -493,17 +510,18 @@ export default function Index() {
                   ))}
                 </div>
 
-                <div className="space-y-2 relative">
+                <div className="relative">
                   {messages.map((msg) => {
                     const idx = messages.indexOf(msg);
                     const isSelectedDay = msg.day === selectedDay;
+                    const visible = isSelectedDay && progress > 0.5;
                     return (
                       <div
                         key={msg.id}
                         ref={(el) => { if (window.innerWidth < 768) slotRefs.current[idx] = el; }}
                         className={`flex items-start gap-3 p-3 rounded-xl border transition-all duration-300 ${
                           isSelectedDay
-                            ? "border-border/70 bg-card"
+                            ? `border-border/70 bg-card mb-2 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`
                             : "h-0 p-0 m-0 overflow-hidden border-0 opacity-0"
                         }`}
                       >
