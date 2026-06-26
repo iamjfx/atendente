@@ -202,6 +202,7 @@ router.get("/check-email", async (req, res: Response) => {
     return res.json({
       exists: true,
       hasAtendente: !!product,
+      account_id: profile.id,
       nome: profile.nome,
     });
   } catch (err) {
