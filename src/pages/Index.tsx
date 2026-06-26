@@ -183,13 +183,7 @@ export default function Index() {
       if (!bubble) return;
 
       const startX = (heroPositions[i].left / 100) * windowW;
-      let startY: number;
-      if (isMobile) {
-        // Mobile: mesma distribuicao do desktop, compactada nos 35% do topo
-        startY = (heroPositions[i].top / 100) * windowH * 0.35;
-      } else {
-        startY = (heroPositions[i].top / 100) * windowH;
-      }
+      const startY = (heroPositions[i].top / 100) * windowH - (isMobile ? 44 : 0);
 
       const slotRect = slotRects[i];
       const endX = slotRect.x || startX;
@@ -226,27 +220,12 @@ export default function Index() {
       }
     });
 
-    // Mobile: cards aparecem sincronizados com a chegada das bolhas (p 0.6-0.85)
-    if (isMobile) {
-      const cardOpacity = Math.max(0, Math.min(1, (p - 0.6) / 0.25));
-      const currentDay = selectedDayRef.current;
-      messages.forEach((msg, i) => {
-        const slot = slotRefs.current[i];
-        if (!slot) return;
-        if (msg.day === currentDay) {
-          slot.style.opacity = String(cardOpacity);
-          slot.style.transform = `translateY(${(1 - cardOpacity) * 8}px)`;
-        }
-      });
-    }
-
-    const wordShift = isMobile ? 0.2 : 0;
     const wordWindows = [
-      { el: badgeRef.current, start: 0.0 + wordShift, end: 0.10 + wordShift },
-      { el: wordRefs.current[0], start: 0.0 + wordShift, end: 0.10 + wordShift },
-      { el: wordRefs.current[1], start: 0.06 + wordShift, end: 0.16 + wordShift },
-      { el: wordRefs.current[2], start: 0.12 + wordShift, end: 0.24 + wordShift },
-      { el: wordRefs.current[3], start: 0.20 + wordShift, end: 0.34 + wordShift },
+      { el: badgeRef.current, start: 0.0, end: 0.10 },
+      { el: wordRefs.current[0], start: 0.0, end: 0.10 },
+      { el: wordRefs.current[1], start: 0.06, end: 0.16 },
+      { el: wordRefs.current[2], start: 0.12, end: 0.24 },
+      { el: wordRefs.current[3], start: 0.20, end: 0.34 },
     ];
     wordWindows.forEach(({ el, start, end }) => {
       if (!el) return;
@@ -257,7 +236,7 @@ export default function Index() {
     });
 
     if (subtitleRef.current) {
-      const t = Math.max(0, Math.min(1, (rawProgress - (0.30 + wordShift)) / 0.15));
+      const t = Math.max(0, Math.min(1, (rawProgress - 0.30) / 0.15));
       const eased = 1 - Math.pow(1 - t, 3);
       subtitleRef.current.style.opacity = String(eased);
       subtitleRef.current.style.transform = `translateY(${(1 - eased) * 24}px)`;
@@ -275,7 +254,7 @@ export default function Index() {
       const bubble = bubbleRefs.current[i];
       if (!bubble) return;
       const sx = (heroPositions[i].left / 100) * w;
-      const sy = isMobile ? (heroPositions[i].top / 100) * h * 0.35 : (heroPositions[i].top / 100) * h;
+      const sy = (heroPositions[i].top / 100) * h - (isMobile ? 44 : 0);
       bubble.style.transform = `translate(-50%,-50%) translate(${sx}px,${sy}px) scale(${depthScales[i]})`;
       bubble.style.opacity = "1";
     });
@@ -550,7 +529,6 @@ export default function Index() {
                             ? "border-border/70 bg-card mb-2"
                             : "h-0 p-0 m-0 overflow-hidden border-0 opacity-0"
                         }`}
-                        style={isSelectedDay ? { opacity: 0 } : undefined}
                       >
                         <div
                           className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold text-white shadow-sm"
