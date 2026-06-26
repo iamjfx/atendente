@@ -385,7 +385,7 @@ export default function Index() {
       </section>
 
       {/* Floating bubbles */}
-      <div className="hidden md:block">
+      <div className="block">
         {messages.map((msg, i) => {
           const color = avatarColors[i % avatarColors.length];
           return (
@@ -394,7 +394,7 @@ export default function Index() {
               ref={(el) => { bubbleRefs.current[i] = el; }}
               className="bubble-fixed"
             >
-              <div               className="wa" style={{ '--bw': `${baseWidths[i]}px` } as React.CSSProperties}>
+              <div className="wa" style={{ '--bw': `${baseWidths[i]}px`, maxWidth: '85vw' } as React.CSSProperties}>
                 <div className="flex items-center gap-2 mb-0.5">
                   <div
                     className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-[8px] font-bold text-white"
