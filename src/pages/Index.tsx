@@ -13,30 +13,35 @@ const Logo = () => (
 );
 
 const messages = [
-  { id: 1, name: "Carlos", text: "Olá, gostaria de fazer um orçamento pra pintar 3 cômodos", time: "08:30", emoji: "", day: "seg", service: "Pintura de 3 cômodos" },
-  { id: 2, name: "Maria", text: "Bom dia, quando consegue passar pra ver o quadro elétrico?", time: "10:00", emoji: "", day: "seg", service: "Verificação de quadro elétrico" },
-  { id: 3, name: "José", text: "Preciso de um eletricista urgente 😰 o disjuntor queimou e apagou tudo aqui", time: "10:45", emoji: "😰", day: "seg", service: "Troca de disjuntor" },
-  { id: 4, name: "Fernanda", text: "Quanto fica pra instalar um chuveiro novo? Tem urgência 🔥", time: "11:30", emoji: "🔥", day: "seg", service: "Instalação de chuveiro" },
-  { id: 5, name: "Ricardo", text: "Pode vir hoje ver um vazamento no banheiro?", time: "13:15", emoji: "", day: "seg", service: "Reparo de vazamento" },
-  { id: 6, name: "Juliana", text: "⚠️ O ar condicionado parou do nada, tá um calor aqui 🥵", time: "14:00", emoji: "⚠️", day: "seg", service: "Manutenção de ar condicionado" },
-  { id: 7, name: "Pedro", text: "Pode vir amanhã de manhã ver o vazamento?", time: "08:00", emoji: "", day: "ter", service: "Conserto de vazamento" },
-  { id: 8, name: "Lúcia", text: "🔴 Emergência!!! O chuveiro tá vazando água no banheiro inteiro", time: "09:00", emoji: "🔴", day: "ter", service: "Vazamento no chuveiro" },
-  { id: 9, name: "Marcos", text: "Instalação de ventilador de teto, quanto fica?", time: "10:30", emoji: "", day: "ter", service: "Instalação de ventilador" },
-  { id: 10, name: "Carla", text: "O portão elétrico não abre mais 🆘 não consigo sair de casa", time: "14:00", emoji: "🆘", day: "ter", service: "Reparo de portão elétrico" },
-  { id: 11, name: "Rogério", text: "Faz orçamento de encanamento pro banheiro?", time: "15:30", emoji: "", day: "ter", service: "Encanamento do banheiro" },
-  { id: 12, name: "Patrícia", text: "🚨🚨 A CAIXA D'ÁGUA ESTOUROU, tá inundando o quintal!!!!", time: "07:30", emoji: "🚨", day: "qua", service: "Vazamento de caixa d'água" },
-  { id: 13, name: "Eduardo", text: "Troca de registro de água, faz esse serviço?", time: "09:00", emoji: "", day: "qua", service: "Troca de registro de água" },
-  { id: 14, name: "Camila", text: "Bom dia! Preciso de um orçamento pra reformar o banheiro inteiro", time: "10:00", emoji: "", day: "qua", service: "Reforma do banheiro" },
-  { id: 15, name: "Luciano", text: "😰 A máquina de lavar tá vazando e alagando a área, pode vir urgente?", time: "11:30", emoji: "😰", day: "qua", service: "Vazamento na máquina de lavar" },
-  { id: 16, name: "Tatiane", text: "Instalação de torneira nova na cozinha", time: "15:00", emoji: "", day: "qua", service: "Instalação de torneira" },
-  { id: 17, name: "Roberto", text: "Faz manutenção em aquecedor a gás?", time: "08:30", emoji: "", day: "qui", service: "Manutenção de aquecedor a gás" },
-  { id: 18, name: "Simone", text: "⚠️⚠️ A fiação do quarto está fazendo curto, ajuda pelo amor de Deus ⚠️⚠️", time: "10:00", emoji: "⚠️", day: "qui", service: "Curto-circuito na fiação" },
-  { id: 19, name: "André", text: "Pode fazer orçamento de pintura externa?", time: "13:30", emoji: "", day: "qui", service: "Pintura externa" },
+  // SEGUNDA (5)
+  { id: 1, name: "Carlos", text: "Olá, gostaria de fazer um orçamento pra pintar 3 cômodos", time: "08:00", emoji: "", day: "seg", service: "Pintura de 3 cômodos" },
+  { id: 2, name: "Maria", text: "Bom dia, quando consegue passar pra ver o quadro elétrico?", time: "09:00", emoji: "", day: "seg", service: "Verificação de quadro elétrico" },
+  { id: 3, name: "José", text: "Preciso de um eletricista urgente 😰 o disjuntor queimou e apagou tudo aqui", time: "10:30", emoji: "😰", day: "seg", service: "Troca de disjuntor" },
+  { id: 4, name: "Fernanda", text: "Quanto fica pra instalar um chuveiro novo? Tem urgência 🔥", time: "13:30", emoji: "🔥", day: "seg", service: "Instalação de chuveiro" },
+  { id: 5, name: "Ricardo", text: "Pode vir hoje ver um vazamento no banheiro?", time: "14:30", emoji: "", day: "seg", service: "Reparo de vazamento" },
+  // TERÇA (5)
+  { id: 6, name: "Juliana", text: "⚠️ O ar condicionado parou do nada, tá um calor aqui 🥵", time: "08:00", emoji: "⚠️", day: "ter", service: "Manutenção de ar condicionado" },
+  { id: 7, name: "Pedro", text: "Pode vir amanhã de manhã ver o vazamento?", time: "09:00", emoji: "", day: "ter", service: "Conserto de vazamento" },
+  { id: 8, name: "Lúcia", text: "🔴 Emergência!!! O chuveiro tá vazando água no banheiro inteiro", time: "10:00", emoji: "🔴", day: "ter", service: "Vazamento no chuveiro" },
+  { id: 9, name: "Marcos", text: "Instalação de ventilador de teto, quanto fica?", time: "14:00", emoji: "", day: "ter", service: "Instalação de ventilador" },
+  { id: 10, name: "Carla", text: "O portão elétrico não abre mais 🆘 não consigo sair de casa", time: "15:30", emoji: "🆘", day: "ter", service: "Reparo de portão elétrico" },
+  // QUARTA (5)
+  { id: 11, name: "Rogério", text: "Faz orçamento de encanamento pro banheiro?", time: "08:00", emoji: "", day: "qua", service: "Encanamento do banheiro" },
+  { id: 12, name: "Patrícia", text: "🚨🚨 A CAIXA D'ÁGUA ESTOUROU, tá inundando o quintal!!!!", time: "09:30", emoji: "🚨", day: "qua", service: "Vazamento de caixa d'água" },
+  { id: 13, name: "Eduardo", text: "Troca de registro de água, faz esse serviço?", time: "11:00", emoji: "", day: "qua", service: "Troca de registro de água" },
+  { id: 14, name: "Camila", text: "Bom dia! Preciso de um orçamento pra reformar o banheiro inteiro", time: "13:30", emoji: "", day: "qua", service: "Reforma do banheiro" },
+  { id: 15, name: "Luciano", text: "😰 A máquina de lavar tá vazando e alagando a área, pode vir urgente?", time: "15:00", emoji: "😰", day: "qua", service: "Vazamento na máquina de lavar" },
+  // QUINTA (5)
+  { id: 16, name: "Tatiane", text: "Instalação de torneira nova na cozinha", time: "08:30", emoji: "", day: "qui", service: "Instalação de torneira" },
+  { id: 17, name: "Roberto", text: "Faz manutenção em aquecedor a gás?", time: "10:00", emoji: "", day: "qui", service: "Manutenção de aquecedor a gás" },
+  { id: 18, name: "Simone", text: "⚠️⚠️ A fiação do quarto está fazendo curto, ajuda pelo amor de Deus ⚠️⚠️", time: "11:00", emoji: "⚠️", day: "qui", service: "Curto-circuito na fiação" },
+  { id: 19, name: "André", text: "Pode fazer orçamento de pintura externa?", time: "14:00", emoji: "", day: "qui", service: "Pintura externa" },
   { id: 20, name: "Débora", text: "A campainha não funciona mais", time: "16:00", emoji: "", day: "qui", service: "Conserto de campainha" },
+  // SEXTA (4)
   { id: 21, name: "Sandra", text: "Pode vir hoje? O encanamento estourou, tô desesperada 😰😰", time: "08:00", emoji: "😰", day: "sex", service: "Vazamento no encanamento" },
   { id: 22, name: "Fábio", text: "🔴🔴🔴 Não aguento mais, a goteira no teto não para nunca", time: "09:30", emoji: "🔴", day: "sex", service: "Goteira no teto" },
   { id: 23, name: "Alice", text: "Consegue trocar o chuveiro hoje à tarde?", time: "13:00", emoji: "", day: "sex", service: "Troca de chuveiro" },
-  { id: 24, name: "Vinícius", text: "Quero automatizar o portão, faz esse serviço?", time: "15:30", emoji: "", day: "sex", service: "Automação de portão" },
+  { id: 24, name: "Vinícius", text: "Quero automatizar o portão, faz esse serviço?", time: "14:30", emoji: "", day: "sex", service: "Automação de portão" },
 ];
 
 const avatarColors = [
@@ -151,7 +156,14 @@ export default function Index() {
       const slot = slotRefs.current[i];
       if (!slot) return { x: 0, y: 0 };
       const r = slot.getBoundingClientRect();
-      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      let x = r.left + r.width / 2;
+      let y = r.top + r.height / 2;
+      if (isMobile) {
+        // Garante que o destino fique visível na metade inferior da tela
+        const minY = windowH * 0.35 + (i % 5) * 14;
+        if (y < minY) y = minY;
+      }
+      return { x, y };
     });
 
     const now = performance.now();
@@ -171,10 +183,11 @@ export default function Index() {
       const y = startY + (endY - startY) * p;
       const base = depthScales[i];
       const scale = base + (0.65 - base) * Math.min(1, p * 1.8);
-      const floatAmt = Math.max(0, 1 - p * 2);
+      const floatMult = isMobile ? 4 : 1;
+      const floatAmt = Math.max(0.15, 1 - Math.max(0, p - 0.3) * 3);
       const floatPhase = Math.sin(now / 800 * (2 + i * 0.15) + i * 1.2);
-      const floatX = floatOffsets[i].x * floatAmt * floatPhase;
-      const floatY = floatOffsets[i].y * floatAmt * floatPhase;
+      const floatX = floatOffsets[i].x * floatAmt * floatPhase * floatMult;
+      const floatY = floatOffsets[i].y * floatAmt * floatPhase * floatMult;
       const rot = rotVals[i] * Math.max(0, 1 - p * 1.5);
       const finalX = x + floatX;
       const finalY = y + floatY;
@@ -462,53 +475,7 @@ export default function Index() {
             </div>
 
             <div className={`agenda-header-in ${progress > 0.6 ? "visible" : ""}`}>
-              {/* Mobile: day pills + vertical list */}
-              <div className="md:hidden space-y-3">
-                <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
-                  {days.map((day) => (
-                    <button
-                      key={day.key}
-                      onClick={() => setSelectedDay(day.key)}
-                      className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                        selectedDay === day.key
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground hover:bg-accent"
-                      }`}
-                    >
-                      {day.full}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="space-y-2">
-                  {messages.map((msg) => {
-                    const idx = messages.indexOf(msg);
-                      return (
-                        <div
-                          key={msg.id}
-                          ref={(el) => { slotRefs.current[idx] = el; }}
-                          className="flex items-start gap-3 p-3 rounded-xl border border-border/70 bg-card"
-                        >
-                          <div
-                            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold text-white shadow-sm"
-                            style={{ background: avatarColors[idx % avatarColors.length] }}
-                          >
-                            {avatarLetters[idx]}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center justify-between gap-1">
-                              <span className="text-xs font-semibold text-foreground truncate">{msg.name}</span>
-                              <span className="text-[10px] text-muted-foreground/60 shrink-0">{msg.time}</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground/80 leading-snug mt-0.5">{msg.service}</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
-              </div>
-
-              {/* Desktop: 5-column week grid */}
+              {/* Desktop: 5-column week grid (renders first, slotRefs overwritten by mobile on small screens) */}
               <div className="hidden md:grid md:grid-cols-5 gap-3">
                 {days.map((day) => (
                   <div key={day.key} className="min-h-[240px]">
@@ -556,6 +523,57 @@ export default function Index() {
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* Mobile: day pills + vertical list (renders last, slotRefs win on mobile) */}
+              <div className="md:hidden space-y-3">
+                <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
+                  {days.map((day) => (
+                    <button
+                      key={day.key}
+                      onClick={() => setSelectedDay(day.key)}
+                      className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                        selectedDay === day.key
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground hover:bg-accent"
+                      }`}
+                    >
+                      {day.full}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="space-y-2 relative">
+                  {messages.map((msg) => {
+                    const idx = messages.indexOf(msg);
+                    const isSelectedDay = msg.day === selectedDay;
+                    return (
+                      <div
+                        key={msg.id}
+                        ref={(el) => { slotRefs.current[idx] = el; }}
+                        className={`flex items-start gap-3 p-3 rounded-xl border transition-all duration-300 ${
+                          isSelectedDay
+                            ? "border-border/70 bg-card"
+                            : "h-0 p-0 m-0 overflow-hidden border-0 opacity-0"
+                        }`}
+                      >
+                        <div
+                          className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold text-white shadow-sm"
+                          style={{ background: avatarColors[idx % avatarColors.length] }}
+                        >
+                          {avatarLetters[idx]}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="text-xs font-semibold text-foreground truncate">{msg.name}</span>
+                            <span className="text-[10px] text-muted-foreground/60 shrink-0">{msg.time}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground/80 leading-snug mt-0.5">{msg.service}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
