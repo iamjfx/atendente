@@ -131,7 +131,7 @@ router.put("/:table/:id?", authMiddleware, async (req: AuthenticatedRequest, res
   }
 });
 
-router.delete("/:table/:id", authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+router.delete("/:table/:id?", authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   const { table, id } = req.params;
   const validationError = validateTable(table);
   if (validationError) {
@@ -139,7 +139,17 @@ router.delete("/:table/:id", authMiddleware, async (req: AuthenticatedRequest, r
   }
 
   try {
-    const { data, error } = await db.from(table).delete().eq("id", id).single();
+    let query = db.from(table).delete();
+
+    if (id) {
+      query = query.eq("id", id);
+    } else {
+      for (const [col, val] of Object.entries(req.query)) {
+        query = query.eq(col, val);
+      }
+    }
+
+    const { data, error } = await query.single();
 
     if (error) {
       return res.status(500).json({ error: error.message });
