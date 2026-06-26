@@ -22,6 +22,17 @@
     <meta property="og:description" content="Triagem e agendamento automático por WhatsApp. Integrado ao Controle Total.">
     <meta property="og:locale" content="pt_BR">
     <meta property="og:site_name" content="Atendente">
+    <script>
+      // Mata qualquer service worker fantasma que esteja servindo cache velho
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(r) {
+          r.forEach(function(reg) { reg.unregister(); });
+        });
+        caches.keys().then(function(k) {
+          k.forEach(function(key) { caches.delete(key); });
+        });
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
