@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { format, startOfWeek, addDays, isSameDay, parse } from "date-fns";
 import { ptBR } from "date-fns/locale/pt-BR";
+import { MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Appointment } from "@/types/appointment";
 import { statusColor } from "@/lib/statusHelpers";
@@ -93,14 +94,30 @@ export default function WeekTimeline({ currentDate, appointments, onSelectAppoin
                       key={apt.id}
                       onClick={() => onSelectAppointment(apt)}
                       className={cn(
-                        "absolute left-0.5 right-0.5 rounded border px-1 py-0.5 cursor-pointer overflow-hidden transition-all hover:shadow-md z-[5]",
+                        "absolute left-0.5 right-0.5 rounded border px-1 py-0.5 cursor-pointer overflow-hidden transition-all hover:shadow-md z-[5] group",
                         statusColor(apt.status)
                       )}
                       style={{ top, height }}
                     >
-                      <p className="text-[10px] font-semibold truncate leading-tight">{apt.cliente_nome}</p>
-                      <p className="text-[9px] opacity-80 truncate leading-tight">{apt.servico}</p>
-                      <p className="text-[8px] opacity-60">{apt.hora_inicio}</p>
+                      <p className="text-xs font-semibold truncate leading-tight">{apt.cliente_nome}</p>
+                      <p className="text-[10px] opacity-80 truncate leading-tight">{apt.servico}</p>
+                      <p className="text-[10px] opacity-60">{apt.hora_inicio}</p>
+                      {(() => {
+                        const phone = apt.telefone?.replace(/\D/g, "");
+                        const url = phone ? `https://api.whatsapp.com/send?phone=55${phone}` : null;
+                        return url ? (
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-[#25D366]/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Falar no WhatsApp"
+                          >
+                            <MessageCircle className="w-2.5 h-2.5 text-[#25D366]" />
+                          </a>
+                        ) : null;
+                      })()}
                     </div>
                   );
                 })}

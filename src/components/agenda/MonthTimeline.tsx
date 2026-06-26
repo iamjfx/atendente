@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek, isSameMonth, isSameDay, isToday, parse } from "date-fns";
+import { MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Appointment } from "@/types/appointment";
 
@@ -64,21 +65,37 @@ export default function MonthTimeline({ currentMonth, appointments, onSelectDate
                 </span>
               </div>
               <div className="space-y-0.5">
-                {dayApts.slice(0, 3).map((apt) => (
-                  <div
-                    key={apt.id}
-                    onClick={(e) => { e.stopPropagation(); onSelectAppointment(apt); }}
-                    className={cn(
-                      "text-[9px] px-1 py-0.5 rounded truncate leading-tight",
-                      apt.status === "confirmed" && "bg-success/20 text-success",
-                      apt.status === "pending" && "bg-yellow-500/20 text-yellow-700",
-                      apt.status === "completed" && "bg-primary/20 text-primary",
-                      apt.status === "cancelled" && "bg-muted text-muted-foreground line-through"
-                    )}
-                  >
-                    {apt.hora_inicio} {apt.cliente_nome}
-                  </div>
-                ))}
+                {dayApts.slice(0, 3).map((apt) => {
+                  const phone = apt.telefone?.replace(/\D/g, "");
+                  const url = phone ? `https://api.whatsapp.com/send?phone=55${phone}` : null;
+                  return (
+                    <div
+                      key={apt.id}
+                      onClick={(e) => { e.stopPropagation(); onSelectAppointment(apt); }}
+                      className={cn(
+                        "text-[10px] px-1 py-0.5 rounded truncate leading-tight group relative",
+                        apt.status === "confirmed" && "bg-success/20 text-success",
+                        apt.status === "pending" && "bg-yellow-500/20 text-yellow-700",
+                        apt.status === "completed" && "bg-primary/20 text-primary",
+                        apt.status === "cancelled" && "bg-muted text-muted-foreground line-through"
+                      )}
+                    >
+                      {apt.hora_inicio} {apt.cliente_nome}
+                      {url && (
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="absolute top-0.5 right-0.5 w-3.5 h-3.5 rounded-full bg-[#25D366]/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Falar no WhatsApp"
+                        >
+                          <MessageCircle className="w-2 h-2 text-[#25D366]" />
+                        </a>
+                      )}
+                    </div>
+                  );
+                })}
                 {dayApts.length > 3 && (
                   <p className="text-[9px] text-muted-foreground pl-1">
                     +{dayApts.length - 3} mais
