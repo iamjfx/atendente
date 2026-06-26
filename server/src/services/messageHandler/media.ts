@@ -35,6 +35,12 @@ export async function handleMediaMessage(
     pushName
   );
 
+  // Conversa bloqueada na IA — descarta mídia também
+  if (status === "blocked") {
+    console.log(`Mídia ignorada — conversa ${conversationId} bloqueada na IA`);
+    return { handled: false, responded: false, reason: "blocked" };
+  }
+
   const label = isAudio ? "[Áudio]" : "[Imagem]";
   await storeMessage(conversationId, remoteJid, instanceRecord.id, false, label);
   await updateConversationPreview(conversationId, label, false);

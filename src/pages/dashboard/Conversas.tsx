@@ -31,6 +31,7 @@ interface Message {
 
 export default function Conversas() {
   const { profile } = useAccount();
+  const nomeIa = profile?.nome_ia || "IA";
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -39,7 +40,7 @@ export default function Conversas() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [messageInput, setMessageInput] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<"all" | "active" | "manual">("all");
+  const [activeFilter, setActiveFilter] = useState<"all" | "active" | "manual" | "blocked">("all");
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -169,9 +170,12 @@ export default function Conversas() {
   async function toggleIaStatus(conv: Conversation) {
     const newStatus = conv.status === "active" ? "archived" : "active";
     try {
+      const updates: Record<string, any> = { status: newStatus };
+      if (newStatus === "archived") updates.ai_resolved = false;
+
       const { error } = await db
         .from("conversations")
-        .update({ status: newStatus })
+        .update(updates)
         .eq("id", conv.id);
 
       if (error) throw error;
@@ -191,7 +195,28 @@ export default function Conversas() {
     }
   }
 
-  // Send a manual message
+  async function blockConversation(conv: Conversation) {
+    const confirmar = confirm(
+      "As mensagens deste contato não serão mais processadas pela IA. O contato continua podendo te mandar mensagens normalmente no WhatsApp."
+    );
+    if (!confirmar) return;
+
+    try {
+      const newStatus = conv.status === "blocked" ? "active" : "blocked";
+      await db.from("conversations").update({ status: newStatus }).eq("id", conv.id);
+      await db.from("conversations").update({ ai_resolved: false }).eq("id", conv.id);
+
+      setSelectedConv({ ...conv, status: newStatus });
+      setConversations((prev) =>
+        prev.map((c) => (c.id === conv.id ? { ...c, status: newStatus } : c))
+      );
+
+      toast.success(newStatus === "blocked" ? "Contato bloqueado na IA." : "Contato desbloqueado.");
+    } catch (err: any) {
+      toast.error("Erro ao bloquear: " + err.message);
+    }
+  }
+
   async function handleSendMessage(e: React.FormEvent) {
     e.preventDefault();
     if (!messageInput.trim() || !selectedConv || !profile) return;
@@ -236,7 +261,8 @@ export default function Conversas() {
         .update({
           last_message_preview: content.slice(0, 100),
           last_message_at: new Date().toISOString(),
-          status: "archived", // Human override pauses IA
+          status: "archived",
+          ai_resolved: false,
         })
         .eq("id", selectedConv.id);
 
@@ -281,7 +307,8 @@ export default function Conversas() {
     const matchesFilter =
       activeFilter === "all" ||
       (activeFilter === "active" && c.status === "active") ||
-      (activeFilter === "manual" && c.status === "archived");
+      (activeFilter === "manual" && c.status === "archived") ||
+      (activeFilter === "blocked" && c.status === "blocked");
 
     return matchesSearch && matchesFilter;
   });
@@ -321,7 +348,7 @@ export default function Conversas() {
 
           {/* Quick Filters */}
           <div className="flex gap-1 bg-muted/50 p-0.5 rounded-lg text-xs">
-            {(["all", "active", "manual"] as const).map((f) => (
+            {(["all", "active", "manual", "blocked"] as const).map((f) => (
               <button
                 key={f}
                 onClick={() => setActiveFilter(f)}
@@ -331,7 +358,7 @@ export default function Conversas() {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {f === "all" ? "Todos" : f === "active" ? "🤖 IA" : "👤 Manual"}
+                {f === "all" ? "Todos" : f === "active" ? "🤖 IA" : f === "manual" ? "👤 Manual" : "🔇 Bloqueados"}
               </button>
             ))}
           </div>
@@ -376,7 +403,11 @@ export default function Conversas() {
                     </p>
                     
                     <div className="flex items-center gap-1.5 mt-1">
-                      {isIaActive ? (
+                      {conv.status === "blocked" ? (
+                        <span className="inline-flex items-center text-[9px] font-semibold text-neutral-500 bg-neutral-500/10 px-1 rounded">
+                          🔇 Bloqueada na IA
+                        </span>
+                      ) : isIaActive ? (
                         <span className="inline-flex items-center text-[9px] font-semibold text-indigo-500 bg-indigo-500/10 px-1 rounded">
                           <Bot className="w-2.5 h-2.5 mr-0.5" /> IA Ativa
                         </span>
@@ -428,16 +459,16 @@ export default function Conversas() {
                 <span className={`text-[10px] font-bold px-2 py-1 rounded-full border flex items-center gap-1 transition-all ${
                   selectedConv.status === "active"
                     ? "bg-indigo-500/10 text-indigo-500 border-indigo-500/20"
+                    : selectedConv.status === "blocked"
+                    ? "bg-neutral-500/10 text-neutral-500 border-neutral-500/20"
                     : "bg-orange-500/10 text-orange-500 border-orange-500/20"
                 }`}>
                   {selectedConv.status === "active" ? (
-                    <>
-                      <Bot className="w-3.5 h-3.5" /> 🤖 IA Respondendo
-                    </>
+                    <><Bot className="w-3.5 h-3.5" /> 🤖 IA Respondendo</>
+                  ) : selectedConv.status === "blocked" ? (
+                    <>🔇 Bloqueada na IA</>
                   ) : (
-                    <>
-                      <User className="w-3.5 h-3.5" /> 👤 Suporte Manual
-                    </>
+                    <><User className="w-3.5 h-3.5" /> 👤 Suporte Manual</>
                   )}
                 </span>
                 
@@ -456,6 +487,15 @@ export default function Conversas() {
                       <Play className="w-3 h-3 mr-1 text-green-500" /> Ativar IA
                     </>
                   )}
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className={`h-8 text-xs font-semibold ${selectedConv.status === "blocked" ? "text-green-500 border-green-500/30" : "text-muted-foreground"}`}
+                  onClick={() => blockConversation(selectedConv)}
+                >
+                  {selectedConv.status === "blocked" ? "✅ Desbloquear IA" : "🔇 Bloquear na IA"}
                 </Button>
               </div>
             </div>
@@ -481,25 +521,26 @@ export default function Conversas() {
                     >
                       <div className={`max-w-[70%] rounded-2xl p-3 text-xs leading-relaxed shadow-sm relative group ${
                         isMe
-                          ? "bg-primary text-primary-foreground rounded-tr-none"
+                          ? msg.ai_processed
+                            ? "bg-primary text-primary-foreground rounded-tr-none"
+                            : "bg-muted text-foreground rounded-tr-none border"
                           : "bg-card text-foreground rounded-tl-none border"
                       }`}>
-                        {/* If model sent message, display if it was AI generated */}
                         {isMe && msg.ai_processed && (
                           <div className="flex items-center text-[9px] text-primary-foreground/70 font-semibold mb-1">
-                            <Bot className="w-3 h-3 mr-0.5" /> IA
+                            <Bot className="w-3 h-3 mr-0.5" /> {nomeIa}
                           </div>
                         )}
                         {isMe && !msg.ai_processed && (
-                          <div className="flex items-center text-[9px] text-primary-foreground/70 font-semibold mb-1">
-                            <User className="w-3 h-3 mr-0.5" /> Manual
+                          <div className="flex items-center text-[9px] text-muted-foreground/70 font-semibold mb-1">
+                            <User className="w-3 h-3 mr-0.5" /> Você
                           </div>
                         )}
 
                         <p className="whitespace-pre-wrap">{msg.content}</p>
-                        
+
                         <div className={`flex items-center justify-end gap-1 mt-1 text-[8px] ${
-                          isMe ? "text-primary-foreground/60" : "text-muted-foreground/75"
+                          isMe ? (msg.ai_processed ? "text-primary-foreground/60" : "text-muted-foreground/60") : "text-muted-foreground/75"
                         }`}>
                           <span>
                             {new Date(msg.created_at).toLocaleTimeString("pt-BR", {

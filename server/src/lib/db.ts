@@ -253,6 +253,15 @@ export const db = {
   from(table: string) {
     return new QueryBuilder(table);
   },
+  async raw(sql: string, params: any[] = []) {
+    try {
+      const res = await pool.query(sql, params);
+      return { rows: res.rows };
+    } catch (err: any) {
+      console.error(`[DB Raw Error]`, err);
+      return { rows: [] };
+    }
+  },
   auth: {
     async getUser(token: string) {
       try {

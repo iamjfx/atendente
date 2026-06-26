@@ -13,6 +13,7 @@ import authRouter from "./routes/auth.js";
 import dataRouter from "./routes/data.js";
 import agendaRouter from "./routes/agenda.js";
 import dashboardRouter from "./routes/dashboard.js";
+import analyticsRouter from "./routes/analytics.js";
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use("/auth", authRouter);
 app.use("/db", dataRouter);
 app.use("/agenda", agendaRouter);
 app.use("/dashboard", dashboardRouter);
+app.use("/analytics", analyticsRouter);
 
 app.listen(config.port, () => {
   console.log(`Atendente API rodando na porta ${config.port}`);

@@ -32,19 +32,9 @@ export type WebhookPayload = z.infer<typeof webhookSchema>;
 export async function handleIncomingMessage(payload: unknown) {
   const parsed = webhookSchema.parse(payload);
   const { instance, data } = parsed;
-
-  if (data.key.fromMe) {
-    console.log(`Ignorando mensagem de saída (fromMe=true): ${instance}`);
-    return { handled: false, reason: "own_message" };
-  }
-
   const remoteJid = data.key.remoteJid;
 
-  if (remoteJid.includes("@g.us")) {
-    console.log(`Ignorando mensagem de grupo: ${remoteJid}`);
-    return { handled: false, reason: "group" };
-  }
-
+  // Busca instanceRecord ANTES para ter account_id
   const { data: instanceRecord } = await db
     .from("evolution_instances")
     .select("id, account_id, instance_name")
@@ -54,6 +44,39 @@ export async function handleIncomingMessage(payload: unknown) {
   if (!instanceRecord) {
     console.log(`Instancia nao encontrada: ${instance}`);
     return { handled: false, reason: "instance_not_found" };
+  }
+
+  // Mensagens enviadas pelo próprio dono (via WhatsApp)
+  if (data.key.fromMe) {
+    const { data: existing } = await db
+      .from("conversations")
+      .select("id")
+      .eq("instance_id", instanceRecord.id)
+      .eq("remote_jid", remoteJid)
+      .maybeSingle();
+
+    if (existing) {
+      // IA já estava atuando — armazena como intervenção humana
+      const content = (data.message as any)?.conversation || (data.message as any)?.extendedTextMessage?.text;
+      if (content) {
+        await storeMessage(existing.id, remoteJid, instanceRecord.id, true, content);
+        await updateConversationPreview(existing.id, content, true);
+      }
+      await db
+        .from("conversations")
+        .update({ ai_resolved: false, status: "archived" })
+        .eq("id", existing.id);
+      console.log(`Intervenção humana registrada (fromMe): ${remoteJid}`);
+      return { handled: true, responded: false, reason: "owner_intervention" };
+    }
+
+    // Conversa nova iniciada pelo dono — não armazena
+    return { handled: false, reason: "owner_new_message" };
+  }
+
+  if (remoteJid.includes("@g.us")) {
+    console.log(`Ignorando mensagem de grupo: ${remoteJid}`);
+    return { handled: false, reason: "group" };
   }
 
   const { data: profileRecord } = await db
@@ -154,6 +177,12 @@ export async function handleIncomingMessage(payload: unknown) {
     data.pushName
   );
 
+  // Conversa bloqueada na IA — descarta completamente
+  if (status === "blocked") {
+    console.log(`Conversa ${conversationId} bloqueada na IA — mensagem ignorada`);
+    return { handled: false, responded: false, reason: "blocked" };
+  }
+
   await storeMessage(conversationId, remoteJid, instanceRecord.id, false, content);
   await updateConversationPreview(conversationId, content, false);
 
@@ -163,7 +192,6 @@ export async function handleIncomingMessage(payload: unknown) {
   }
 
   const history = await loadHistory(conversationId, instance);
-
   const recurringContext = await checkRecurringClient(instanceRecord.account_id, remoteJid);
   const enrichedContent = recurringContext ? `${recurringContext}\n\nCliente: ${content}` : content;
   history.push({ role: "user", parts: enrichedContent });
