@@ -185,8 +185,8 @@ export default function Index() {
       const startX = (heroPositions[i].left / 100) * windowW;
       let startY: number;
       if (isMobile) {
-        // Mobile: bolhas no topo, podem ficar sob o header (z-index menor)
-        startY = Math.floor(i / 4) * 20 - 4;
+        // Mobile: mesma distribuicao do desktop, compactada nos 35% do topo
+        startY = (heroPositions[i].top / 100) * windowH * 0.35;
       } else {
         startY = (heroPositions[i].top / 100) * windowH;
       }
@@ -199,27 +199,36 @@ export default function Index() {
       const y = startY + (endY - startY) * p;
       const base = depthScales[i];
       const scale = base + (0.65 - base) * Math.min(1, p * 1.8);
-      const floatMult = isMobile ? 2 : 1;
-      const floatAmt = Math.max(0.15, 1 - Math.max(0, p - 0.3) * 3);
-      const floatPhase = Math.sin(now / (isMobile ? 1200 : 800) * (2 + i * 0.15) + i * 1.2);
-      const floatX = floatOffsets[i].x * floatAmt * floatPhase * floatMult;
-      const floatY = floatOffsets[i].y * floatAmt * floatPhase * floatMult;
+      let floatX: number, floatY: number;
+      if (isMobile) {
+        // Mobile: float orbital Lissajous suave (cada bolha tem padrao unico)
+        const t = now / 1000;
+        const phase = i * 0.6 + Math.sin(i) * 0.3;
+        floatX = Math.sin(t * 0.7 + phase) * 5 + Math.sin(t * 0.4 + phase * 1.3) * 3;
+        floatY = Math.cos(t * 0.6 + phase * 0.8) * 5 + Math.cos(t * 0.5 + phase * 1.1) * 3;
+      } else {
+        const floatAmt = Math.max(0.15, 1 - Math.max(0, p - 0.3) * 3);
+        const floatPhase = Math.sin(now / 800 * (2 + i * 0.15) + i * 1.2);
+        floatX = floatOffsets[i].x * floatAmt * floatPhase * 1;
+        floatY = floatOffsets[i].y * floatAmt * floatPhase * 1;
+      }
       const rot = rotVals[i] * Math.max(0, 1 - p * 1.5);
-      const finalX = x + floatX;
-      const finalY = y + floatY;
+      const floatInfluence = Math.max(0, 1 - p * 0.6);
+      const finalX = x + floatX * floatInfluence;
+      const finalY = y + floatY * floatInfluence;
 
       bubble.style.transform = `translate(-50%,-50%) translate(${finalX}px,${finalY}px) rotate(${rot}deg) scale(${scale})`;
       if (isMobile) {
-        // Mobile: bolhas somem no exato momento que o calendário aparece
-        bubble.style.opacity = String(1 - Math.max(0, Math.min(1, (rawProgress - 0.28) / 0.04)));
+        // Mobile: bolhas somem ao chegar no destino (p 0.7-0.9)
+        bubble.style.opacity = String(1 - Math.max(0, Math.min(1, (p - 0.7) / 0.2)));
       } else {
         bubble.style.opacity = String(1 - Math.max(0, Math.min(1, (rawProgress - 0.5) / 0.3)));
       }
     });
 
-    // Mobile: cards aparecem com a MESMA formula do fade das bolhas (sincrono, DOM direto)
+    // Mobile: cards aparecem sincronizados com a chegada das bolhas (p 0.6-0.85)
     if (isMobile) {
-      const cardOpacity = Math.max(0, Math.min(1, (rawProgress - 0.28) / 0.04));
+      const cardOpacity = Math.max(0, Math.min(1, (p - 0.6) / 0.25));
       const currentDay = selectedDayRef.current;
       messages.forEach((msg, i) => {
         const slot = slotRefs.current[i];
@@ -231,12 +240,13 @@ export default function Index() {
       });
     }
 
+    const wordShift = isMobile ? 0.2 : 0;
     const wordWindows = [
-      { el: badgeRef.current, start: 0.0, end: 0.10 },
-      { el: wordRefs.current[0], start: 0.0, end: 0.10 },
-      { el: wordRefs.current[1], start: 0.06, end: 0.16 },
-      { el: wordRefs.current[2], start: 0.12, end: 0.24 },
-      { el: wordRefs.current[3], start: 0.20, end: 0.34 },
+      { el: badgeRef.current, start: 0.0 + wordShift, end: 0.10 + wordShift },
+      { el: wordRefs.current[0], start: 0.0 + wordShift, end: 0.10 + wordShift },
+      { el: wordRefs.current[1], start: 0.06 + wordShift, end: 0.16 + wordShift },
+      { el: wordRefs.current[2], start: 0.12 + wordShift, end: 0.24 + wordShift },
+      { el: wordRefs.current[3], start: 0.20 + wordShift, end: 0.34 + wordShift },
     ];
     wordWindows.forEach(({ el, start, end }) => {
       if (!el) return;
@@ -247,7 +257,7 @@ export default function Index() {
     });
 
     if (subtitleRef.current) {
-      const t = Math.max(0, Math.min(1, (rawProgress - 0.30) / 0.15));
+      const t = Math.max(0, Math.min(1, (rawProgress - (0.30 + wordShift)) / 0.15));
       const eased = 1 - Math.pow(1 - t, 3);
       subtitleRef.current.style.opacity = String(eased);
       subtitleRef.current.style.transform = `translateY(${(1 - eased) * 24}px)`;
@@ -265,7 +275,7 @@ export default function Index() {
       const bubble = bubbleRefs.current[i];
       if (!bubble) return;
       const sx = (heroPositions[i].left / 100) * w;
-      const sy = isMobile ? Math.floor(i / 4) * 20 - 4 : (heroPositions[i].top / 100) * h;
+      const sy = isMobile ? (heroPositions[i].top / 100) * h * 0.35 : (heroPositions[i].top / 100) * h;
       bubble.style.transform = `translate(-50%,-50%) translate(${sx}px,${sy}px) scale(${depthScales[i]})`;
       bubble.style.opacity = "1";
     });
