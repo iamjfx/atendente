@@ -132,8 +132,6 @@ export default function Index() {
   const subtitleRef = useRef<HTMLParagraphElement>(null);
   const badgeRef = useRef<HTMLDivElement>(null);
   const selectedDayRef = useRef(selectedDay);
-  const animTriggered = useRef(false);
-  const animStartTime = useRef(0);
 
   useEffect(() => { selectedDayRef.current = selectedDay; }, [selectedDay]);
 
@@ -180,21 +178,6 @@ export default function Index() {
 
     const now = performance.now();
 
-    // Mobile: trigger/reset da animação temporal (1000ms)
-    if (isMobile) {
-      if (rawProgress > 0.05 && !animTriggered.current) {
-        animTriggered.current = true;
-        animStartTime.current = now;
-      }
-      if (rawProgress < 0.01 && animTriggered.current) {
-        animTriggered.current = false;
-      }
-    }
-    const animT = animTriggered.current && isMobile
-      ? Math.min(1, (now - animStartTime.current) / 1000)
-      : 0;
-    const animEase = 1 - Math.pow(1 - animT, 3); // easeOutCubic
-
     messages.forEach((_msg, i) => {
       const bubble = bubbleRefs.current[i];
       if (!bubble) return;
@@ -207,28 +190,28 @@ export default function Index() {
       const endY = slotRect.y || (startY + 200);
 
       if (isMobile) {
-        // Mobile: animação temporal (1000ms) independente do scroll
-        const flightX = startX + (endX - startX) * animEase;
-        const flightY = startY + (endY - startY) * animEase;
+        // Mobile: scroll-driven com orbital float suave
+        const flightX = startX + (endX - startX) * p;
+        const flightY = startY + (endY - startY) * p;
 
         const sec = now * 0.001;
         const phase = i * 0.6 + Math.sin(i) * 0.3;
         const floatX = Math.sin(sec * 0.7 + phase) * 5 + Math.sin(sec * 0.4 + phase * 1.3) * 3;
         const floatY = Math.cos(sec * 0.6 + phase * 0.8) * 5 + Math.cos(sec * 0.5 + phase * 1.1) * 3;
-        const floatInfluence = Math.max(0, 1 - animT * 0.5);
+        const floatInfluence = Math.max(0, 1 - p * 0.6);
 
         const base = depthScales[i];
-        const scale = 0.3 + 0.7 * (1 - animEase * 0.7);
-
-        const rot = rotVals[i] * Math.max(0, 1 - animEase);
+        const scale = base + (0.65 - base) * Math.min(1, p * 1.8);
+        const rot = rotVals[i] * Math.max(0, 1 - p * 1.5);
 
         const finalX = flightX + floatX * floatInfluence;
         const finalY = flightY + floatY * floatInfluence;
 
         bubble.style.transform = `translate(-50%,-50%) translate(${finalX}px,${finalY}px) rotate(${rot}deg) scale(${scale})`;
-        bubble.style.opacity = String(1 - animT * 0.9);
+        // Fade: bolhas somem ao chegar no destino (p 0.6-0.9)
+        bubble.style.opacity = String(1 - Math.max(0, Math.min(1, (p - 0.6) / 0.3)));
       } else {
-        // Desktop: animação scroll-driven (original)
+        // Desktop: scroll-driven original
         const x = startX + (endX - startX) * p;
         const y = startY + (endY - startY) * p;
         const base = depthScales[i];
@@ -246,10 +229,14 @@ export default function Index() {
       }
     });
 
-    // Texto: mobile usa progresso mapeado da animação temporal
-    const textProgress = isMobile && animTriggered.current
-      ? animT * 0.7
-      : rawProgress;
+    const wordWindows = [
+      { el: badgeRef.current, start: 0.0, end: 0.10 },
+      { el: wordRefs.current[0], start: 0.0, end: 0.10 },
+      { el: wordRefs.current[1], start: 0.06, end: 0.16 },
+      { el: wordRefs.current[2], start: 0.12, end: 0.24 },
+      { el: wordRefs.current[3], start: 0.20, end: 0.34 },
+    ];
+
     const wordWindows = [
       { el: badgeRef.current, start: 0.0, end: 0.10 },
       { el: wordRefs.current[0], start: 0.0, end: 0.10 },
@@ -259,14 +246,14 @@ export default function Index() {
     ];
     wordWindows.forEach(({ el, start, end }) => {
       if (!el) return;
-      const t = Math.max(0, Math.min(1, (textProgress - start) / (end - start)));
+      const t = Math.max(0, Math.min(1, (rawProgress - start) / (end - start)));
       const eased = 1 - Math.pow(1 - t, 3);
       el.style.opacity = String(eased);
       el.style.transform = `translateY(${(1 - eased) * 40}px)`;
     });
 
     if (subtitleRef.current) {
-      const t = Math.max(0, Math.min(1, (textProgress - 0.30) / 0.15));
+      const t = Math.max(0, Math.min(1, (rawProgress - 0.30) / 0.15));
       const eased = 1 - Math.pow(1 - t, 3);
       subtitleRef.current.style.opacity = String(eased);
       subtitleRef.current.style.transform = `translateY(${(1 - eased) * 24}px)`;
@@ -422,6 +409,9 @@ export default function Index() {
         .agenda-header-in.visible {
           opacity: 1;
           transform: translateY(0);
+        }
+        @media (max-width: 767px) {
+          .agenda-header-in { opacity: 1 !important; transform: none !important; transition: none !important; }
         }
 
         .scrollbar-none::-webkit-scrollbar { display: none; }
