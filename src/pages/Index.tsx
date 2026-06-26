@@ -551,7 +551,7 @@ export default function Index() {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
             {[
-              { i: MessageCircle, t: "WhatsApp nativo 😊", d: "Conecta direto na Evolution API. O cliente manda zap, a IA responde. Sem intermediário.", c: "from-primary to-primary/80" },
+              { i: MessageCircle, t: "WhatsApp nativo 😊", d: "Conecta direto no WhatsApp. O cliente manda zap, a IA responde. Sem intermediário.", c: "from-primary to-primary/80" },
               { i: Bot, t: "Entendimento contextual 🤔", d: "Não é robô com respostas prontas. A IA entende o que o cliente precisa, extrai dados e decide o próximo passo.", c: "from-[#AC39FF] to-[#9333EA]" },
               { i: CalendarDays, t: "Auto-agendamento 😎", d: "Consulta sua agenda em tempo real, considera seu deslocamento e sugere o melhor horário. CEP preenche endereço automaticamente.", c: "from-[#30D158] to-[#28B84B]" },
               { i: Users, t: "Histórico completo", d: "Cada conversa fica salva com busca. Mensagens da IA identificadas com o nome dela, mensagens manuais com 'Você' — cores diferentes pra facilitar.", c: "from-[#FF9F0A] to-[#E88F00]" },
