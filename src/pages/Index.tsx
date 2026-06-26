@@ -183,7 +183,9 @@ export default function Index() {
       if (!bubble) return;
 
       const startX = (heroPositions[i].left / 100) * windowW;
-      const startY = (heroPositions[i].top / 100) * windowH - (isMobile ? 44 : 0);
+      const startY = isMobile
+        ? ((heroPositions[i].top - 40) / 100) * windowH - 44
+        : (heroPositions[i].top / 100) * windowH;
 
       const slotRect = slotRects[i];
       const endX = slotRect.x || startX;
@@ -236,14 +238,6 @@ export default function Index() {
       { el: wordRefs.current[2], start: 0.12, end: 0.24 },
       { el: wordRefs.current[3], start: 0.20, end: 0.34 },
     ];
-
-    const wordWindows = [
-      { el: badgeRef.current, start: 0.0, end: 0.10 },
-      { el: wordRefs.current[0], start: 0.0, end: 0.10 },
-      { el: wordRefs.current[1], start: 0.06, end: 0.16 },
-      { el: wordRefs.current[2], start: 0.12, end: 0.24 },
-      { el: wordRefs.current[3], start: 0.20, end: 0.34 },
-    ];
     wordWindows.forEach(({ el, start, end }) => {
       if (!el) return;
       const t = Math.max(0, Math.min(1, (rawProgress - start) / (end - start)));
@@ -271,7 +265,9 @@ export default function Index() {
       const bubble = bubbleRefs.current[i];
       if (!bubble) return;
       const sx = (heroPositions[i].left / 100) * w;
-      const sy = (heroPositions[i].top / 100) * h - (isMobile ? 44 : 0);
+      const sy = isMobile
+        ? ((heroPositions[i].top - 40) / 100) * h - 44
+        : (heroPositions[i].top / 100) * h;
       bubble.style.transform = `translate(-50%,-50%) translate(${sx}px,${sy}px) scale(${depthScales[i]})`;
       bubble.style.opacity = "1";
     });
@@ -412,6 +408,7 @@ export default function Index() {
         }
         @media (max-width: 767px) {
           .agenda-header-in { opacity: 1 !important; transform: none !important; transition: none !important; }
+          .bubble-fixed .wa { transform: scale(0.7); }
         }
 
         .scrollbar-none::-webkit-scrollbar { display: none; }
@@ -518,34 +515,20 @@ export default function Index() {
             </div>
 
             <div className={`agenda-header-in ${progress > 0.6 ? "visible" : ""}`}>
-              {/* Mobile: day pills + vertical list */}
+              {/* Mobile: vertical list (apenas Segunda) */}
               <div className="md:hidden space-y-3">
-                <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
-                  {days.map((day) => (
-                    <button
-                      key={day.key}
-                      onClick={() => setSelectedDay(day.key)}
-                      className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                        selectedDay === day.key
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground hover:bg-accent"
-                      }`}
-                    >
-                      {day.full}
-                    </button>
-                  ))}
-                </div>
+                <div className="text-xs font-semibold text-muted-foreground">Segunda</div>
 
                 <div className="relative">
                   {messages.map((msg) => {
                     const idx = messages.indexOf(msg);
-                    const isSelectedDay = msg.day === selectedDay;
+                    const isSegunda = msg.day === "seg";
                     return (
                       <div
                         key={msg.id}
                         ref={(el) => { if (window.innerWidth < 768) slotRefs.current[idx] = el; }}
                         className={`flex items-start gap-3 p-3 rounded-xl border transition-all duration-300 ${
-                          isSelectedDay
+                          isSegunda
                             ? "border-border/70 bg-card mb-2"
                             : "h-0 p-0 m-0 overflow-hidden border-0 opacity-0"
                         }`}
