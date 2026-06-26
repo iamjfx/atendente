@@ -11,6 +11,7 @@ import Dashboard from "@/pages/dashboard/Dashboard";
 import Agenda from "@/pages/dashboard/Agenda";
 import Conversas from "@/pages/dashboard/Conversas";
 import Configuracoes from "@/pages/dashboard/Configuracoes";
+import Analytics from "@/pages/dashboard/Analytics";
 import Suporte from "@/pages/dashboard/Suporte";
 import { Toaster } from "sonner";
 
@@ -67,6 +68,14 @@ export default function App() {
             element={
               <ProtectedRoute product="atendente">
                 <AppLayout><Suporte /></AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/analytics"
+            element={
+              <ProtectedRoute product="atendente">
+                <AppLayout><Analytics /></AppLayout>
               </ProtectedRoute>
             }
           />

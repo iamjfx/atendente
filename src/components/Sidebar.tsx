@@ -7,6 +7,7 @@ import {
   MessageCircle,
   Calendar,
   Settings,
+  TrendingUp,
   LogOut,
   LifeBuoy,
 } from "lucide-react";
@@ -21,6 +22,7 @@ const allRoutes = [
   { label: "Início", icon: Home, href: "/admin", show: true },
   { label: "Agenda", icon: Calendar, href: "/agenda", show: true },
   { label: "Conversas", icon: MessageCircle, href: "/conversas", show: true },
+  { label: "Analytics", icon: TrendingUp, href: "/analytics", show: true },
   { label: "Configurações", icon: Settings, href: "/configuracoes", show: true },
   { label: "Suporte", icon: LifeBuoy, href: "/suporte", show: true },
 ];

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, Calendar, MessageCircle, Settings, LifeBuoy } from "lucide-react";
+import { Home, Calendar, MessageCircle, Settings, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -7,7 +7,7 @@ const navItems = [
   { label: "Agenda", icon: Calendar, href: "/agenda" },
   { label: "Conversas", icon: MessageCircle, href: "/conversas" },
   { label: "Config", icon: Settings, href: "/configuracoes" },
-  { label: "Suporte", icon: LifeBuoy, href: "/suporte" },
+  { label: "Analytics", icon: TrendingUp, href: "/analytics" },
 ];
 
 export default function BottomNav() {
