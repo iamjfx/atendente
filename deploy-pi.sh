@@ -59,7 +59,7 @@ SNIP
 
   ssh ${PI_SSH} "sudo tee /etc/nginx/sites-available/atendente > /dev/null" << NGX
 server {
-    listen 80 default_server;
+    listen 8081;
     server_name _;
 
     root $DEST_ATD_FRONT;
@@ -147,8 +147,8 @@ deploy_atendente() {
   echo "═══════ Atendente ═══════"
   cd /Users/joel/Projetos/atendente
 
-  export VITE_API_URL="http://${PI_HOST}"
-  export VITE_API_BASE_URL="http://${PI_HOST}/api"
+  export VITE_API_URL="http://${PI_HOST}:8081"
+  export VITE_API_BASE_URL="http://${PI_HOST}:8081/api"
   npm run build
 
   rsync -avz --delete dist/ ${PI_SSH}:${DEST_ATD_FRONT}/
@@ -232,7 +232,7 @@ echo "========================================"
 echo "🎉 Deploy concluído!"
 echo ""
 echo "Acesse:"
-echo "  http://${PI_HOST}           → Atendente"
+echo "  http://${PI_HOST}:8081      → Atendente"
 echo "  http://${PI_HOST}:8082      → Vitrine"
 echo "  http://${PI_HOST}:8083      → Controle Total"
 echo ""
