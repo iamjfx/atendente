@@ -147,8 +147,8 @@ deploy_atendente() {
   echo "═══════ Atendente ═══════"
   cd /Users/joel/Projetos/atendente
 
-  export VITE_API_URL="http://${PI_HOST}:5003"
-  export VITE_API_BASE_URL="http://${PI_HOST}:5003/api"
+  export VITE_API_URL="http://${PI_HOST}"
+  export VITE_API_BASE_URL="http://${PI_HOST}/api"
   npm run build
 
   rsync -avz --delete dist/ ${PI_SSH}:${DEST_ATD_FRONT}/
@@ -176,7 +176,8 @@ deploy_vitrine() {
   echo "═══════ Vitrine ═══════"
   cd /Users/joel/Projetos/vitrine
 
-  export VITE_API_URL="http://${PI_HOST}:5002"
+  export VITE_API_URL="http://${PI_HOST}:8082"
+  npm run build
   npm run build
 
   rsync -avz --delete dist/ ${PI_SSH}:${DEST_VIT_FRONT}/
@@ -199,6 +200,7 @@ deploy_ct() {
   echo "═══════ Controle Total ═══════"
   cd /Users/joel/Projetos/controletotal
 
+  export VITE_API_URL="http://${PI_HOST}:5001"
   npm run build
   rsync -avz --delete dist/ ${PI_SSH}:${DEST_CT_FRONT}/
 
