@@ -59,8 +59,8 @@ SNIP
 
   ssh ${PI_SSH} "sudo tee /etc/nginx/sites-available/atendente > /dev/null" << NGX
 server {
-    listen 80;
-    server_name atendente.$DOMAIN;
+    listen 80 default_server;
+    server_name _;
 
     root $DEST_ATD_FRONT;
     include /etc/nginx/snippets/spa-cache.conf;
@@ -90,8 +90,8 @@ NGX
 
   ssh ${PI_SSH} "sudo tee /etc/nginx/sites-available/vitrine > /dev/null" << NGX
 server {
-    listen 80;
-    server_name vitrine.$DOMAIN;
+    listen 8082;
+    server_name _;
 
     root $DEST_VIT_FRONT;
     index index.html;
@@ -113,8 +113,8 @@ NGX
 
   ssh ${PI_SSH} "sudo tee /etc/nginx/sites-available/controletotal > /dev/null" << NGX
 server {
-    listen 80;
-    server_name controletotal.$DOMAIN;
+    listen 8083;
+    server_name _;
 
     root $DEST_CT_FRONT;
     index index.html;
@@ -147,17 +147,17 @@ deploy_atendente() {
   echo "═══════ Atendente ═══════"
   cd /Users/joel/Projetos/atendente
 
-  export VITE_API_URL="http://atendente.$DOMAIN"
-  export VITE_API_BASE_URL="http://atendente.$DOMAIN/api"
+  export VITE_API_URL="http://${PI_HOST}:5003"
+  export VITE_API_BASE_URL="http://${PI_HOST}:5003/api"
   npm run build
 
-  sudo rsync -avz --delete dist/ ${PI_SSH}:${DEST_ATD_FRONT}/
+  rsync -avz --delete dist/ ${PI_SSH}:${DEST_ATD_FRONT}/
 
   cd server
   npm run build
-  sudo rsync -avz --delete dist/ ${PI_SSH}:${DEST_ATD_API}/dist/
-  sudo rsync -avz package.json ${PI_SSH}:${DEST_ATD_API}/
-  [ -f .env ] && sudo rsync -avz .env ${PI_SSH}:${DEST_ATD_API}/.env
+  rsync -avz --delete dist/ ${PI_SSH}:${DEST_ATD_API}/dist/
+  rsync -avz package.json ${PI_SSH}:${DEST_ATD_API}/
+  [ -f .env ] && rsync -avz .env ${PI_SSH}:${DEST_ATD_API}/.env
 
   ssh ${PI_SSH} "
     cd ${DEST_ATD_API}
@@ -176,12 +176,12 @@ deploy_vitrine() {
   echo "═══════ Vitrine ═══════"
   cd /Users/joel/Projetos/vitrine
 
-  export VITE_API_URL="http://vitrine.$DOMAIN"
+  export VITE_API_URL="http://${PI_HOST}:5002"
   npm run build
 
-  sudo rsync -avz --delete dist/ ${PI_SSH}:${DEST_VIT_FRONT}/
-  sudo rsync -avz --delete server/ ${PI_SSH}:${DEST_VIT_API}/ --exclude node_modules --exclude uploads
-  [ -f .env ] && sudo rsync -avz .env ${PI_SSH}:${DEST_VIT_API}/.env
+  rsync -avz --delete dist/ ${PI_SSH}:${DEST_VIT_FRONT}/
+  rsync -avz --delete server/ ${PI_SSH}:${DEST_VIT_API}/ --exclude node_modules --exclude uploads
+  [ -f .env ] && rsync -avz .env ${PI_SSH}:${DEST_VIT_API}/.env
 
   ssh ${PI_SSH} "
     cd ${DEST_VIT_API}
@@ -200,10 +200,10 @@ deploy_ct() {
   cd /Users/joel/Projetos/controletotal
 
   npm run build
-  sudo rsync -avz --delete dist/ ${PI_SSH}:${DEST_CT_FRONT}/
+  rsync -avz --delete dist/ ${PI_SSH}:${DEST_CT_FRONT}/
 
   if [ -d server ]; then
-    sudo rsync -avz --delete server/ ${PI_SSH}:${DEST_CT_API}/ --exclude node_modules --exclude uploads
+    rsync -avz --delete server/ ${PI_SSH}:${DEST_CT_API}/ --exclude node_modules --exclude uploads
     [ -f .env ] && sudo rsync -avz .env ${PI_SSH}:${DEST_CT_API}/.env
     ssh ${PI_SSH} "
       cd ${DEST_CT_API}
@@ -230,10 +230,8 @@ echo "========================================"
 echo "🎉 Deploy concluído!"
 echo ""
 echo "Acesse:"
-echo "  http://atendente.$DOMAIN"
-echo "  http://vitrine.$DOMAIN"
-echo "  http://controletotal.$DOMAIN"
+echo "  http://${PI_HOST}           → Atendente"
+echo "  http://${PI_HOST}:8082      → Vitrine"
+echo "  http://${PI_HOST}:8083      → Controle Total"
 echo ""
-echo "Lembre de adicionar no /etc/hosts do seu Mac:"
-echo "  $PI_HOST  atendente.$DOMAIN vitrine.$DOMAIN controletotal.$DOMAIN"
 echo "========================================"
