@@ -35,7 +35,7 @@ echo "========================================"
 
 # ─── Cria pastas no Pi ─────────────────────────────────────────────────────
 echo "📁 Criando diretórios..."
-ssh ${PI_SSH} "mkdir -p ${DEST_ATD_FRONT} ${DEST_VIT_FRONT} ${DEST_CT_FRONT} \
+ssh ${PI_SSH} "sudo mkdir -p ${DEST_ATD_FRONT} ${DEST_VIT_FRONT} ${DEST_CT_FRONT} \
   ${DEST_ATD_API} ${DEST_VIT_API} ${DEST_CT_API}"
 
 # ─── 1. Nginx ───────────────────────────────────────────────────────────────
@@ -145,19 +145,19 @@ NGX
 # ─── 2. Atendente ──────────────────────────────────────────────────────────
 deploy_atendente() {
   echo "═══════ Atendente ═══════"
-  cd /Users/joel/projetos/atendente
+  cd /Users/joel/Projetos/atendente
 
   export VITE_API_URL="http://atendente.$DOMAIN"
   export VITE_API_BASE_URL="http://atendente.$DOMAIN/api"
   npm run build
 
-  rsync -avz --delete dist/ ${PI_SSH}:${DEST_ATD_FRONT}/
+  sudo rsync -avz --delete dist/ ${PI_SSH}:${DEST_ATD_FRONT}/
 
   cd server
   npm run build
-  rsync -avz --delete dist/ ${PI_SSH}:${DEST_ATD_API}/dist/
-  rsync -avz package.json ${PI_SSH}:${DEST_ATD_API}/
-  [ -f .env ] && rsync -avz .env ${PI_SSH}:${DEST_ATD_API}/.env
+  sudo rsync -avz --delete dist/ ${PI_SSH}:${DEST_ATD_API}/dist/
+  sudo rsync -avz package.json ${PI_SSH}:${DEST_ATD_API}/
+  [ -f .env ] && sudo rsync -avz .env ${PI_SSH}:${DEST_ATD_API}/.env
 
   ssh ${PI_SSH} "
     cd ${DEST_ATD_API}
@@ -167,21 +167,21 @@ deploy_atendente() {
       || pm2 start dist/index.js --name atendente-api --cwd ${DEST_ATD_API}
     pm2 save
   "
-  cd /Users/joel/projetos/atendente
+  cd /Users/joel/Projetos/atendente
   echo "✅ Atendente OK"
 }
 
 # ─── 3. Vitrine ────────────────────────────────────────────────────────────
 deploy_vitrine() {
   echo "═══════ Vitrine ═══════"
-  cd /Users/joel/projetos/meuprimeirosite
+  cd /Users/joel/Projetos/vitrine
 
   export VITE_API_URL="http://vitrine.$DOMAIN"
   npm run build
 
-  rsync -avz --delete dist/ ${PI_SSH}:${DEST_VIT_FRONT}/
-  rsync -avz --delete server/ ${PI_SSH}:${DEST_VIT_API}/ --exclude node_modules --exclude uploads
-  [ -f .env ] && rsync -avz .env ${PI_SSH}:${DEST_VIT_API}/.env
+  sudo rsync -avz --delete dist/ ${PI_SSH}:${DEST_VIT_FRONT}/
+  sudo rsync -avz --delete server/ ${PI_SSH}:${DEST_VIT_API}/ --exclude node_modules --exclude uploads
+  [ -f .env ] && sudo rsync -avz .env ${PI_SSH}:${DEST_VIT_API}/.env
 
   ssh ${PI_SSH} "
     cd ${DEST_VIT_API}
@@ -197,14 +197,14 @@ deploy_vitrine() {
 # ─── 4. Controle Total ────────────────────────────────────────────────────
 deploy_ct() {
   echo "═══════ Controle Total ═══════"
-  cd /Users/joel/projetos/controletotal
+  cd /Users/joel/Projetos/controletotal
 
   npm run build
-  rsync -avz --delete dist/ ${PI_SSH}:${DEST_CT_FRONT}/
+  sudo rsync -avz --delete dist/ ${PI_SSH}:${DEST_CT_FRONT}/
 
   if [ -d server ]; then
-    rsync -avz --delete server/ ${PI_SSH}:${DEST_CT_API}/ --exclude node_modules --exclude uploads
-    [ -f .env ] && rsync -avz .env ${PI_SSH}:${DEST_CT_API}/.env
+    sudo rsync -avz --delete server/ ${PI_SSH}:${DEST_CT_API}/ --exclude node_modules --exclude uploads
+    [ -f .env ] && sudo rsync -avz .env ${PI_SSH}:${DEST_CT_API}/.env
     ssh ${PI_SSH} "
       cd ${DEST_CT_API}
       [ -f package.json ] && npm install --production 2>/dev/null
